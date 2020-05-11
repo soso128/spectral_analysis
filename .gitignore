@@ -1,0 +1,12 @@
+*.swp
+*.so
+__pycache__
+*.o
+*.aux
+*.fls
+*.log
+*.out
+*.toc
+*.fdb_latexmk
+spectra_scan.txt
+fit_*.txt
