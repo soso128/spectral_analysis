@@ -54,13 +54,26 @@ def SRNflux(enu, tnu, imfpars, csfrpars):
         rate = quad(SRNflux_integrand, 0, 5, args = (enu, tnu, imfpars, csfrpars), epsabs = rate[0]/100)
     return c/H0 * rate[0], c/H0 * rate[1]
 
+# Integrand for SK DSNB rate as a function of cos(theta) given a flux
+def ibd_integrand_flux(c, ee, flux):
+    """
+    Integrand for IBD rate in SK (22.5 kton year) as a function of cos(theta)
+    theta is the scattering angle
+    ee is the positron energy
+    flux is a 2D array giving the flux as a function of the neutrino energy
+    """
+    fflux = interp1d(flux[:, 0], flux[:, 1], bounds_error = False, fill_value = 0)
+    en = sn.enu(ee, c)
+    res = fflux(en) * sn.dsigma(en, 0, c) * 0.047390723e42
+    return res
+
 # Integrand for SK DSNB rate as a function of cos(theta)
 def ibd_integrand(c, ee, specpar, imfpars, csfrpars):
     """
     Integrand for IBD rate in SK (22.5 kton year) as a function of cos(theta)
     theta is the scattering angle
     ee is the positron energy
-    tnu is the effective neutrino temperature assuming a blackbody emission spectrum
+    specpar are model parameters for the SN neutrino emission spectrum
     imfpars and csfrpars are dictionaries for the corresponding parameters
     """
     en = sn.enu(ee, c)
@@ -69,11 +82,27 @@ def ibd_integrand(c, ee, specpar, imfpars, csfrpars):
     res = sn.snrate(en, specpar, *args.values()) * sn.dsigma(en, 0, c) * 0.047390723e42
     return res
 
+# SK DSNB spectrum as a function of positron energy given a flux
+# Example use:
+#   flux = loadtxt("yourmodel.txt")
+#   ee = arange(0.1,80.1,0.1)
+#   rate = array([ibd_integrand_flux(en,flux) for en in ee])
+# It takes forever but we don't use it for parameter scans anyway
+def ibd_spectrum_flux(ee, flux):
+    """
+    IBD rate in SK (22.5 kton year)
+    ee is the positron energy
+    flux is a 2D array giving the flux as a function of the neutrino energy
+    """
+    # Scipy quad much faster than C++ Simpson
+    return quad(ibd_integrand_flux, -1, 1, args = (ee, flux))[0]
+
 # SK DSNB spectrum as a function of positron energy
 def ibd_spectrum(ee, specpar, imfpars, csfrpars):
     """
     IBD rate in SK (22.5 kton year)
     ee is the positron energy
+    specpars is a set of model parameters for the SN emission spectrum
     imfpars and csfrpars are dictionaries for the corresponding parameters
     """
     # Scipy quad much faster than C++ Simpson
