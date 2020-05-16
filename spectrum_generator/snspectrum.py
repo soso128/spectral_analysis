@@ -1,5 +1,6 @@
 from numpy import *
 from scipy.integrate import quad, simps
+from scipy.interpolate import interp1d
 import snrate as sn
 
 """
@@ -13,6 +14,17 @@ imfs = {"salpeter": {'xi1': 2.35, 'xi2': 2.35}, "kroupa": {'xi1': 1.3, 'xi2': 2.
 csfr_up = {'rho0': 0.0213, 'alpha': 3.6, 'beta': -0.1, 'gamma': -2.5, 'z1': 1, 'z2': 4}
 csfr_fiducial = {'rho0': 0.0178, 'alpha': 3.4, 'beta': -0.3, 'gamma': -3.5, 'z1': 1, 'z2': 4}
 csfr_lower = {'rho0': 0.0142, 'alpha': 3.2, 'beta': -0.5, 'gamma': -4.5, 'z1': 1, 'z2': 4}
+
+# Energy resolution functions in different phases of SK
+def energy_sigma(ee, sknum):
+    if sknum == 1:
+        return 0.2468 + 0.1492 * sqrt(ee) + 0.0690 * ee
+    if sknum == 2:
+        return -0.123 + 0.376 * sqrt(ee) + 0.0349 * ee
+    if sknum == 3:
+        return 0.0536 + 0.5200 * sqrt(ee) + 0.0458 * ee
+    if sknum == 4:
+        return -0.290 + 0.434 * sqrt(ee) + 0.0320 * ee
 
 # CCSN rate as a function of redshift
 def snrate(z, imfpars, csfrpars):
@@ -62,11 +74,28 @@ def ibd_spectrum(ee, specpar, imfpars, csfrpars):
     """
     IBD rate in SK (22.5 kton year)
     ee is the positron energy
-    tnu is the effective neutrino temperature assuming a blackbody emission spectrum
     imfpars and csfrpars are dictionaries for the corresponding parameters
     """
     # Scipy quad much faster than C++ Simpson
     return quad(ibd_integrand, -1, 1, args = (ee, specpar, imfpars, csfrpars))[0]
+
+# Smear spectrum for any of the SK phases
+def smear_ibd_spectrum(ee, spec, sknum):
+    """
+    Smeared IBD spectrum in SK (22.5 kton year)
+    ee in the reconstructed positron energy
+    spec is a 2D array with true positron energies and numbers of events
+    returns a 2D array with reconstructed positron energies and numbers of events
+    """
+    fspec = interp1d(spec[:, 0], spec[:, 1], bounds_error = False, fill_value = 0)
+    nsimpson = 1000
+    step = 12./nsimpson
+    erange = ee[:,newaxis] + energy_sigma(ee,sknum)[:,newaxis] * arange(-6,6+step,step)[newaxis,:]
+    simpsoncoeff = array([1./3] + list(((arange(1,nsimpson) % 2) * 2 + 2)/3.) + [1./3])
+    sigma = energy_sigma(ee[:,newaxis],sknum)
+    norm = (simpsoncoeff * exp(-(erange - ee[:,newaxis])**2/(2 * sigma**2))).sum(axis = 1)[:,newaxis]
+    specsmear = (fspec(erange) * simpsoncoeff * exp(-(erange - ee[:,newaxis])**2/(2 * sigma**2))/norm).sum(axis = 1)
+    return ee,specsmear
 
 # Scan
 # Here, we scan over the BH fraction fBH and the rest is fixed
