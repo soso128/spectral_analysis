@@ -3,6 +3,7 @@ from numpy import *
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from scipy.optimize import fmin
+from pdf_sk4 import bg_sk4, relic_sk4
 import likes
 
 # livetimes
@@ -33,6 +34,19 @@ mupi_rescale_low = [1.367, 1.75, 1.34, 1] # mupi from low to medium
 mupi_rescale_high = [0.12777, 0.1, 0.13] # mupi from low to high
 nc_rescale = [1.16313, 1.42, 1.14] # NC from high to medium
 
+# Load background pdfs
+bg_sk4_dir = "/home/giampaol/spectral/spectral_analysis/pdf_bg_sk4"
+cut_bins, cut_effs = [16., 90.], [1.0]
+bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs, bg_sk4_dir, 16.) for i in range(3)]
+
+def pdf(energy, sknum, model, elow, pdfid, region):
+    if sknum < 4: return likes.pdf(energy, sknum, model, elow, pdfid, region)
+    elif sknum == 4:
+        if pdfid == 4: return None # to do (for specific srn models)
+        elif pdfid in range(4): return bgs_sk4[pdfid].pdf(energy, region)
+        else: raise ValueError("Invalid pdfid")
+    else: raise ValueError("Invalid sknum")
+
 # Samples for SK I-IV
 def load_sample(sknum):
     low = loadtxt("sk{}/samplelow.txt".format(int(sknum)))[:, 1]
@@ -53,14 +67,14 @@ high = [high1, high2, high3, high4]
 def systematics_atm(energies_med, energies_high, sknum, model, elow):
     sigmas = arange(-1, 3.5, 0.5)
     # Normalization and correction factors for nue CC
-    norm0 = quad(lambda en: likes.pdf(en, sknum, modelid[model], elow, pdfid["nue"], regionid["medium"]), elow, 90)[0]
-    norm1 = quad(lambda en: en * likes.pdf(en, sknum, modelid[model], elow, pdfid["nue"], regionid["medium"]), elow, 90)[0]
+    norm0 = quad(lambda en: pdf(en, sknum, modelid[model], elow, pdfid["nue"], regionid["medium"]), elow, 90)[0]
+    norm1 = quad(lambda en: en * pdf(en, sknum, modelid[model], elow, pdfid["nue"], regionid["medium"]), elow, 90)[0]
     normnue = 1./(1 + 0.5 * sigmas * (norm1/norm0 - 16)/74)
     nuefact = 1 + 0.5 * sigmas[newaxis,:] * (energies_med[:,newaxis] - 16)/74
     nuefact *= normnue
     # Correction factors for NC
-    normncmed = quad(lambda en: likes.pdf(en, sknum, modelid[model], elow, pdfid["nc"], regionid["medium"]), elow, 90)[0]
-    normnchigh = quad(lambda en: likes.pdf(en, sknum, modelid[model], elow, pdfid["nc"], regionid["high"]), elow, 90)[0]
+    normncmed = quad(lambda en: pdf(en, sknum, modelid[model], elow, pdfid["nc"], regionid["medium"]), elow, 90)[0]
+    normnchigh = quad(lambda en: pdf(en, sknum, modelid[model], elow, pdfid["nc"], regionid["high"]), elow, 90)[0]
     ncfact_med = 1 + sigmas
     ncfact_high = 1 - sigmas * normncmed/normnchigh
     print(ncfact_high, normnue)
@@ -80,7 +94,11 @@ def asym_gaussian():
 # Get pdfs for different energies, regions, types
 # Output is an array of pdf values for each energy and each type of signal/bg 
 def get_pdfmatrix(energies, sknum, region, model, elow):
-    return array(likes.get_pdfs(energies, sknum, regionid[region], modelid[model], elow))
+    if sknum in [1, 2, 3]:
+        return array(likes.get_pdfs(energies, sknum, regionid[region], modelid[model], elow))
+    else:
+        p = [[pdf(e, sknum, model, elow, i, region) for i in range(5)] for e in energies]
+        return array(p)
 
 # Likelihood without systematics
 def get_like_nosys(ncce, nnc, nmupi, nrelic, sknum, model, elow, pdfs_low, pdfs_med, pdfs_high):
