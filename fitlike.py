@@ -4,6 +4,9 @@ from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from scipy.optimize import fmin
 from pdf_sk4 import bg_sk4, relic_sk4
+from sys import path
+path.append("spectrum_generator/")
+import snspectrum as sns
 import likes
 
 # livetimes
@@ -30,19 +33,48 @@ modelid = {"ando": 0}
 #effs = [effsk1, effsk2, effsk3, effsk4]
 
 # Scalings between Cherenkov angle regions (from MC)
-mupi_rescale_low = [1.367, 1.75, 1.34, 1] # mupi from low to medium
-mupi_rescale_high = [0.12777, 0.1, 0.13] # mupi from low to high
-nc_rescale = [1.16313, 1.42, 1.14] # NC from high to medium
+mupi_rescale_low = [1.367, 1.75, 1.34, 1.34] # mupi from low to medium
+mupi_rescale_high = [0.12777, 0.1, 0.13, 0.13] # mupi from low to high
+nc_rescale = [1.16313, 1.42, 1.14, 1.14] # NC from high to medium
 
 # Load background pdfs
-bg_sk4_dir = "/home/giampaol/spectral/spectral_analysis/pdf_bg_sk4"
-cut_bins, cut_effs = [16., 90.], [1.0]
-bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs, bg_sk4_dir, 16.) for i in range(3)]
+bg_sk4_dir = "./pdf_bg_sk4"
+cut_bins, cut_effs = [16, 18, 24, 90], [0.88, 0.88, 1.0]
+bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs, bg_sk4_dir, 16., ntag = True) for i in range(4)]
 
-def pdf(energy, sknum, model, elow, pdfid, region):
+def get_eff(model, sknum, signal = None):
+    if sknum < 4:
+        eff = efftot[model][sknum - 1]
+    else:
+        eff = signal.overall_efficiency()
+    return eff
+
+# Signal efficiencies for SK-IV
+def seff_sk4(en, elow):
+    if en < elow: return 0
+    if en < 18: return 0.231 * 0.88
+    if en < 24: return 0.298 * 0.88
+    if en < 30: return 0.283
+    if en < 40: return 0.263
+    if en < 60: return 0.269
+    if en < 90: return 0.283
+    return 0
+
+def load_signal_pdf_sk4(model, elow):
+    print(f"Load model {model}")
+    if ":" not in model:
+        # These are discrete models
+        flux = loadtxt(f"models/flux_cross_{model}.dat")
+        en = arange(elow,90.1,0.1)
+        spec = array([sns.ibd_spectrum_flux(ee, flux) for ee in en])
+        return relic_sk4(en, spec, lambda z: seff_sk4(z, elow), elow)
+    else:
+        raise ValueError("Parameterized models not implemented yet!")
+
+def pdf(energy, sknum, model, elow, pdfid, region, signal = None):
     if sknum < 4: return likes.pdf(energy, sknum, model, elow, pdfid, region)
     elif sknum == 4:
-        if pdfid == 4: return None # to do (for specific srn models)
+        if pdfid == 4: return signal.pdf(energy,region) # to do (for specific srn models)
         elif pdfid in range(4): return bgs_sk4[pdfid].pdf(energy, region)
         else: raise ValueError("Invalid pdfid")
     else: raise ValueError("Invalid sknum")
@@ -57,7 +89,7 @@ def load_sample(sknum):
 low1, med1, high1 = load_sample(1)
 low2, med2, high2 = load_sample(2)
 low3, med3, high3 = load_sample(3)
-low4, med4, high4 = None,None,None
+low4, med4, high4 = load_sample(4)
 #low4, med4, high4 = load_sample(4)
 low = [low1, low2, low3, low4]
 med = [med1, med2, med3, med4]
@@ -67,14 +99,14 @@ high = [high1, high2, high3, high4]
 def systematics_atm(energies_med, energies_high, sknum, model, elow):
     sigmas = arange(-1, 3.5, 0.5)
     # Normalization and correction factors for nue CC
-    norm0 = quad(lambda en: pdf(en, sknum, modelid[model], elow, pdfid["nue"], regionid["medium"]), elow, 90)[0]
-    norm1 = quad(lambda en: en * pdf(en, sknum, modelid[model], elow, pdfid["nue"], regionid["medium"]), elow, 90)[0]
+    norm0 = quad(lambda en: pdf(en, sknum, model, elow, pdfid["nue"], regionid["medium"]), elow, 90)[0]
+    norm1 = quad(lambda en: en * pdf(en, sknum, model, elow, pdfid["nue"], regionid["medium"]), elow, 90)[0]
     normnue = 1./(1 + 0.5 * sigmas * (norm1/norm0 - 16)/74)
     nuefact = 1 + 0.5 * sigmas[newaxis,:] * (energies_med[:,newaxis] - 16)/74
     nuefact *= normnue
     # Correction factors for NC
-    normncmed = quad(lambda en: pdf(en, sknum, modelid[model], elow, pdfid["nc"], regionid["medium"]), elow, 90)[0]
-    normnchigh = quad(lambda en: pdf(en, sknum, modelid[model], elow, pdfid["nc"], regionid["high"]), elow, 90)[0]
+    normncmed = quad(lambda en: pdf(en, sknum, model, elow, pdfid["nc"], regionid["medium"]), elow, 90)[0]
+    normnchigh = quad(lambda en: pdf(en, sknum, model, elow, pdfid["nc"], regionid["high"]), elow, 90)[0]
     ncfact_med = 1 + sigmas
     ncfact_high = 1 - sigmas * normncmed/normnchigh
     print(ncfact_high, normnue)
@@ -93,11 +125,11 @@ def asym_gaussian():
 
 # Get pdfs for different energies, regions, types
 # Output is an array of pdf values for each energy and each type of signal/bg 
-def get_pdfmatrix(energies, sknum, region, model, elow):
+def get_pdfmatrix(energies, sknum, region, model, elow, signal = None):
     if sknum in [1, 2, 3]:
         return array(likes.get_pdfs(energies, sknum, regionid[region], modelid[model], elow))
     else:
-        p = [[pdf(e, sknum, model, elow, i, region) for i in range(5)] for e in energies]
+        p = [[pdf(e, sknum, model, elow, i, regionid[region], signal) for i in range(5)] for e in energies]
         return array(p)
 
 # Likelihood without systematics
@@ -115,6 +147,7 @@ def get_like(nbackgrounds, nrelic, sknum, model, elow, pdfs_distorted_low, pdfs_
     if nbackgrounds.min() < 0: return -1e10
     wgauss = asym_gaussian()
     nevents = array(list(nbackgrounds) + [nrelic])
+    #print(where(einsum("j,ijkl", nevents, pdfs_distorted_high) < 0))
     totlike = (log(einsum("j,ijkl", nevents, pdfs_distorted_high)).sum(axis = 0) 
                + log(dot(nevents,pdfs_distorted_low.T)).sum(axis = 0) 
                + log(einsum("j,ijkl", nevents, pdfs_distorted_med)).sum(axis = 0) 
@@ -143,10 +176,19 @@ def getmaxlike(nrelic, nback_ini, sknum, model, elow, pdfs_low, pdfs_med, pdfs_h
 # rmin, rmax, rstep = range and step of numbers of relic events for likelihood maximization
 def maxlike(sknum, model, elow, rmin = -5, rmax = 100, rstep = 0.1):
     likemax = -1e10
+    # Get signal spectrum
+    signal = None
+    effsignal = 1.0
+    if sknum== 4:
+        signal = load_signal_pdf_sk4(model,elow)
+        effsignal = get_eff(model,sknum,signal)
+    else:
+        effsignal = efftot[model][sknum - 1]
+
     # Get pdfs
-    pdfs_high = get_pdfmatrix(high[sknum - 1], sknum, "high", model, elow)
-    pdfs_med = get_pdfmatrix(med[sknum - 1], sknum, "medium", model, elow)
-    pdfs_low = get_pdfmatrix(low[sknum - 1], sknum, "low", model, elow)
+    pdfs_high = get_pdfmatrix(high[sknum - 1], sknum, "high", model, elow, signal)
+    pdfs_med = get_pdfmatrix(med[sknum - 1], sknum, "medium", model, elow, signal)
+    pdfs_low = get_pdfmatrix(low[sknum - 1], sknum, "low", model, elow, signal)
 
     # Get systematic error matrices
     sysmatrix_med, sysmatrix_high = systematics_atm(med[sknum-1], high[sknum - 1], sknum, model, elow)
@@ -172,7 +214,7 @@ def maxlike(sknum, model, elow, rmin = -5, rmax = 100, rstep = 0.1):
 
     # Systematic efficiency error correction + limits
     lmax2, best2, errplus2, errminus2, limit2 = analyse(results)
-    results_sys = applysys(results, sknum, model)
+    results_sys = applysys(results, sknum, model,effsignal)
     lmax, best, errplus, errminus, limit = analyse(results_sys, final = True)
 
     # Save and display results
@@ -202,9 +244,8 @@ def analyse(likes, final = False):
     l90 = rel[searchsorted(exp(likes[:, -1] - lmax).cumsum(), 0.9 * norm)] 
     return lmax, best, errplus, errminus, l90
 
-def applysys(likes,sknum,model):
+def applysys(likes,sknum,model,eff):
     # Get gaussian pdf for systematics
-    eff = efftot[model][sknum - 1]
     lower = max(eff - 6*sys_eff[sknum - 1], 0)
     upper = min(eff + 6*sys_eff[sknum - 1], 1)
     step = (upper - lower)/1000.

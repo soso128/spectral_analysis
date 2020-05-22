@@ -1,5 +1,5 @@
 from numpy import digitize
-from pickle import load
+from pickle import load as loadpick
 from scipy import interpolate
 from scipy.integrate import quad
 
@@ -38,7 +38,7 @@ class bg_sk4:
         self.norm = self._get_norm() # Normalization after cuts to 1
 
     def _read_tck(self, file):
-        with open(file, 'r') as fl: tck = load(fl)
+        with open(file, 'rb') as fl: tck = loadpick(fl, encoding = "bytes")
         return tck    
     
     def _pdf_before_cuts_raw(self, energy, region):
@@ -54,7 +54,8 @@ class bg_sk4:
     
     def _check_valid_energy(self, energy):
         if energy < self.elow or energy > self.ehigh:
-            raise ValueError("Energy (%0.2f) outside range (%0.2f-%0.2f)" % (energy, self.elow, self.ehigh))
+            #raise ValueError("Energy (%0.2f) outside range (%0.2f-%0.2f)" % (energy, self.elow, self.ehigh))
+            return 1e-10
         return
 
     def pdf_before_cuts(self, energy, region):
@@ -77,7 +78,9 @@ class bg_sk4:
         ''' Properly normalized pdf, after cuts '''
         self._check_valid_energy(energy)
         ebin = digitize(energy, self.cut_bins)
-        if ebin < 1 or ebin >= len(self.cut_bins): raise ValueError("This shouldn't happen...")
+        if ebin < 1 or ebin >= len(self.cut_bins): 
+            #raise ValueError("This shouldn't happen...")
+            return 1e-10
         cut_eff = self.cut_effs[ebin-1]
         p0 = self.pdf_before_cuts(energy, region)
         return self.norm * cut_eff * p0
@@ -97,13 +100,14 @@ class relic_sk4:
         self.ehigh = 90.0
         self.cherenkov_frac = [9.433e-04, 9.925e-01, 6.525e-03]
 
-        self.spec = interpolate.interp1d(self.energies, self.spec_values)
+        self.spec = interpolate.interp1d(self.energies, self.spec_values, bounds_error = False, fill_value = 0)
         self.norm0 = self._get_norm0() # Normalization of source pdf to 1
         self.norm = self._get_norm() # Normalization after cuts to 1
     
     def _check_valid_energy(self, energy):
         if energy < self.elow or energy > self.ehigh:
-            raise ValueError("Energy (%0.2f) outside range (%0.2f-%0.2f)" % (energy, self.elow, self.ehigh))
+            #raise ValueError("Energy (%0.2f) outside range (%0.2f-%0.2f)" % (energy, self.elow, self.ehigh))
+            return 1e-10
         return
 
     def _spectrum_before_cuts(self, energy, region):
@@ -129,6 +133,9 @@ class relic_sk4:
         for region in range(3):
             area += quad(self._spectrum_after_cuts, self.elow, self.ehigh, args=(region,))[0]
         return 1.0 / area
+
+    def overall_efficiency(self):
+        return self._get_norm()/self._get_norm0()
     
     def pdf(self, energy, region):
         ''' Properly normalized pdf, after cuts '''
