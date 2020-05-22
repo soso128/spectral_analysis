@@ -8,7 +8,7 @@ class bg_sk4:
     nc = bg_sk4(2, cut_edges, efficiencies)
     nc.pdf(energy, region)
     '''
-    def __init__(self, ev_type, cut_bins, cut_effs, pdf_dir, elow):
+    def __init__(self, ev_type, cut_bins, cut_effs, pdf_dir, elow, ntag=False):
         ''' 0 < ev_type < 3 for nue, numu, nc, or mupi background.
         cut_bins should be a list of N energy bin edges.
         cut_effs should be a list of N-1 cut efficiencies.
@@ -25,14 +25,15 @@ class bg_sk4:
             self.cut_bins, self.cut_effs = self.cut_bins + [self.elow], self.cut_effs + [1.0]
 
         # Get background pdf spline fit parameters
+        suf = '_ntag' if ntag else ''
         if ev_type == 0:  # nue
-            self.tck = [self._read_tck('%s/cc_e%d.p'% (pdf_dir, i)) for i in range(3)]
+            self.tck = [self._read_tck('%s/cc_e%d%s.p'% (pdf_dir, i, suf)) for i in range(3)]
         elif ev_type==1:  # numu
-            self.tck = [self._read_tck('%s/cc_mu%d.p'% (pdf_dir, i)) for i in range(3)]
+            self.tck = [self._read_tck('%s/cc_mu%d%s.p'% (pdf_dir, i, suf)) for i in range(3)]
         elif ev_type==2:  # nc
-            self.tck = [self._read_tck('%s/nc%d.p'% (pdf_dir, i)) for i in range(3)]
+            self.tck = [self._read_tck('%s/nc%d%s.p'% (pdf_dir, i, suf)) for i in range(3)]
         elif ev_type==3:  # mupi
-            self.tck = [self._read_tck('%s/mupi%d.p'% (pdf_dir, i)) for i in range(3)]
+            self.tck = [self._read_tck('%s/mupi%d%s.p'% (pdf_dir, i, suf)) for i in range(3)]
         self.norm0 = self._get_norm0() # Normalization of source pdf to 1
         self.norm = self._get_norm() # Normalization after cuts to 1
 
@@ -66,6 +67,8 @@ class bg_sk4:
         for region in range(3):
             for i, cut_eff in enumerate(self.cut_effs):
                 e_lo, e_hi = self.cut_bins[i], self.cut_bins[i+1]
+                if e_hi < self.elow: continue
+                elif e_lo < self.elow: e_lo = self.elow
                 a0, _ = quad(self.pdf_before_cuts, e_lo, e_hi, args=(region,))
                 area += a0 * cut_eff
         return 1.0 / area
@@ -92,7 +95,7 @@ class relic_sk4:
         self.eff = efficiency_func
         self.elow = elow
         self.ehigh = 90.0
-        self.cherenkov_frac = [0.0, 1.0, 0.0]
+        self.cherenkov_frac = [9.433e-04, 9.925e-01, 6.525e-03]
 
         self.spec = interpolate.interp1d(self.energies, self.spec_values)
         self.norm0 = self._get_norm0() # Normalization of source pdf to 1
