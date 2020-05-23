@@ -135,7 +135,7 @@ class relic_sk4:
         return 1.0 / area
 
     def overall_efficiency(self):
-        return self._get_norm()/self._get_norm0()
+        return self._get_norm0()/self._get_norm()
     
     def pdf(self, energy, region):
         ''' Properly normalized pdf, after cuts '''
