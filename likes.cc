@@ -8735,7 +8735,7 @@ using namespace std;
 
 
 double pdf(double en, int sknum, int model, double elow, int ev_type, int region){
-    if (model != 0 && ev_type == 4){
+    if (model > 0 && ev_type == 4){
         cout << "Model " << model << " not implemented!" << endl;
     }
     double val = 0;
@@ -8756,6 +8756,74 @@ double pdf(double en, int sknum, int model, double elow, int ev_type, int region
                 if (region == 0) pdf_rel_sk3_low_(&en, &val);
                 if (region == 1) pdf_rel_sk3_med_(&en, &val);
                 if (region == 2) pdf_rel_sk3_high_(&en, &val);
+            }
+        }
+        if (model == -1){
+            if (sknum == 1){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_mal_sk1_med_(&en, &val);
+                if (region == 2) return 0.;
+            }
+            if (sknum == 2){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_mal_sk2_med_(&en, &val);
+                if (region == 2) return 0.;
+            }
+            if (sknum == 3){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_mal_sk3_med_(&en, &val);
+                if (region == 2) return 0.;
+            }
+        }
+        if (model == -2){
+            if (sknum == 1){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_ksw_sk1_med_(&en, &val);
+                if (region == 2) return 0.;
+            }
+            if (sknum == 2){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_ksw_sk2_med_(&en, &val);
+                if (region == 2) return 0.;
+            }
+            if (sknum == 3){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_ksw_sk3_med_(&en, &val);
+                if (region == 2) return 0.;
+            }
+        }
+        if (model == -3){
+            if (sknum == 1){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_fail_sk1_med_(&en, &val);
+                if (region == 2) return 0.;
+            }
+            if (sknum == 2){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_fail_sk2_med_(&en, &val);
+                if (region == 2) return 0.;
+            }
+            if (sknum == 3){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_fail_sk3_med_(&en, &val);
+                if (region == 2) return 0.;
+            }
+        }
+        if (model == -4){
+            if (sknum == 1){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_woos_sk1_med_(&en, &val);
+                if (region == 2) return 0.;
+            }
+            if (sknum == 2){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_woos_sk2_med_(&en, &val);
+                if (region == 2) return 0.;
+            }
+            if (sknum == 3){
+                if (region == 0) return 0.;
+                if (region == 1) pdf_woos_sk3_med_(&en, &val);
+                if (region == 2) return 0.;
             }
         }
     }
