@@ -23,8 +23,8 @@ livetimes = array([1497.44, 793.71, 562.04, 2790.1])
 # TODO: Update efficiencies for SK-IV
 efftot = {"lma": [0.7975,0.56703,0.77969], "malaney": [0.7903, 0.53273, 0.766262], "faild": [0.7997,0.5845,0.7831] , "woosley": [0.7876,0.5524,0.7764], "ksw" :[0.7908, 0.54527, 0.77371]}
 fluxfac = {"lma": 0.535115, "malan": 0.5845, "ksw": 0.488413, "faild": 0.431, "woosley": 0.47447}
-sys_eff = array([0.0254, 0.0404, 0.0253, 0.03])
-sys_eff_sk4_ntag = 0.12
+sys_eff = array([0.0254, 0.0404, 0.0253, 0.0214])
+sys_eff_sk4_ntag = 0.10
 regionid = {"low": 0, "medium": 1, "high": 2}
 pdfid = {"nue": 0, "numu": 1, "nc": 2, "mupi": 3, "rel": 4}
 modelid = {"lma": 0, "faild": -3, "malaney": -1, "ksw": -2, "woosley": -4}
@@ -459,7 +459,7 @@ def applysys(likes,sknum,eff,ntag = False):
     print(f"Signal efficiency is {eff}")
     if sknum < 4 and ntag:
         raise ValueError(f"No ntag with SK-{sknum}")
-    syseff = sys_eff[sknum - 1] if not ntag else sys_eff_sk4_ntag
+    syseff = sys_eff[sknum - 1]
     lower = max(eff * (1 - 6*syseff), 1e-10)
     upper = min(eff * (1 + 6*syseff), 0.999)
     step = (upper - lower)/1000.
