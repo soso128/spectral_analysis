@@ -22,7 +22,7 @@ mpl.rcParams['font.size'] = 15
 livetimes = array([1497.44, 793.71, 562.04, 2790.1])
 
 # energy-independent efficiency sys
-# TODO: Update efficiencies for SK-IV
+# TODO: Update efficiencies for SK-IV: done
 efftot = {"lma": [0.7975,0.56703,0.77969],
           "malaney": [0.7903, 0.53273, 0.766262],
           "faild": [0.7997,0.5845,0.7831] ,
@@ -30,12 +30,13 @@ efftot = {"lma": [0.7975,0.56703,0.77969],
           "ksw" :[0.7908, 0.54527, 0.77371]}
 fluxfac = {"lma": 0.535115, "malan": 0.5845, "ksw": 0.488413,
            "faild": 0.431, "woosley": 0.47447}
-sys_eff = array([0.0254, 0.0404, 0.0253, 0.03])
-sys_eff_sk4_ntag = 0.12
+sys_eff = array([0.0254, 0.0404, 0.0253, 0.0214])
+sys_eff_sk4_ntag = 0.10
 regionid = {"low": 0, "medium": 1, "high": 2}
 pdfid = {"nue": 0, "numu": 1, "nc": 2, "mupi": 3, "rel": 4}
 modelid = {"lma": 0, "faild": -3, "malaney": -1, "ksw": -2, "woosley": -4}
 
+# TODO: sk4 third red efficiencies: done
 # 3rd reduction efficiencies
 effs_sk4 = loadtxt("efficiencies/efficiencies_sk4.txt")
 effsk4 = interp1d(effs_sk4[:,0], effs_sk4[:,1], bounds_error=False,
@@ -64,7 +65,7 @@ effs_3rdred = [effsk1, effsk2, effsk3, effsk4]
 #effs = [effsk1, effsk2, effsk3, effsk4]
 
 # Spallation efficiencies
-# TODO: Update SK-IV
+# TODO: Update spall effs for SK-IV
 spaeff_sk1 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
 spaeff_sk2 = array([[17.5, 0.762], [20, 0.882], [26, 1.0]])
 spaeff_sk3 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
@@ -74,14 +75,14 @@ spaeff_sk4_ntag = array([[16, 0.88], [18, 0.88], [24, 1.0]])
 spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4]
 
 # Solar efficiencies
-# TODO: Update SK-IV
+# TODO: Update solar effs for SK-IV: done
 soleff_sk1 = array([[16, 0.738], [17, 0.821], [18, 0.878],
                     [19, 0.965], [20, 1]])
 soleff_sk2 = array([[17.5, 0.738], [18.02, 0.821], [19.08, 0.878],
                     [20.14, 0.965], [21.2, 1]])
 soleff_sk3 = array([[16, 0.738], [17, 0.821], [18, 0.878],
                     [19, 0.965], [20, 1]])
-soleff_sk4 = array([[16, 0.736], [17, 0.813], [18, 0.865],
+soleff_sk4 = array([[16, 0.7226], [17, 0.8138], [18, 0.8718],
                     [19, 0.965], [20, 1]])
 soleff = [soleff_sk1, soleff_sk2, soleff_sk3, soleff_sk4]
 
@@ -157,7 +158,7 @@ def seff_sk(en, elow, sknum, ntag=False):
     return 0
 
 
-# TODO: differnt signal loading for sk123/4
+# TODO: different signal loading for sk123/4: done
 def load_signal_pdf(sknum, model, elow):
     ''' Load relic signal model pdfs, either from a discrete (named) model
     or a parametric model. '''
@@ -186,7 +187,6 @@ def load_signal_pdf(sknum, model, elow):
         mod = literal_eval(model)
         en = arange(elow, 90.1, 0.1)
         spec = array([sns.ibd_spectrum(ee, mod, imf, csfr) for ee in en])
-        print(spec)
         ee,spec = sns.smear_ibd_spectrum(en, column_stack((en, spec)), sknum)
         totrate = spec[ee > elow].sum() * (ee[1] - ee[0])
         rel = relic(en, spec)
@@ -284,7 +284,6 @@ def systematics_atm(energies, sknum, model, elow,
         normnchigh = pdfnorm(pdfid["nc"], regionid["high"])
         ncfact_med = 1 + sigmas2  # (Nsigmas2)
         ncfact_high = 1 - sigmas2 * normncmed/normnchigh #  (Nsigmas2)
-        print(ncfact_high, normnue)
 
         # make systematics tensors (Nenergies x Npdfs x Nsigmas x Nsigmas2)
         sysmatrix_med = ones((len(energies_med), 5, len(sigmas), len(sigmas2)))
@@ -311,6 +310,8 @@ def systematics_atm(energies, sknum, model, elow,
         normnue = 1. / (1 + 0.5 * sigmas * (norm1 / norm0 - 16) / 74)
         nuefact = 1 + 0.5*sigmas[newaxis,:]*(energies_med[:,newaxis]-16)/74
         nuefact *= normnue # (Nenergies x Nsigmas)
+        nuefact_1n = 1+0.5*sigmas[newaxis,:]*(energies_med_n[:,newaxis]-16)/74
+        nuefact_1n *= normnue
 
         # Correction factors for NC
         normncmed = pdfnorm(pdfid["nc"], regionid["medium"])
@@ -318,16 +319,15 @@ def systematics_atm(energies, sknum, model, elow,
         ncfact_med = 1 + sigmas2  # (Nsigmas2)
         ncfact_high = 1 - sigmas2 * normncmed / normnchigh  # (Nsigmas2)
         #ncfact_high = where(ncfact_high < 0, 0, ncfact_high)
-        print(ncfact_high, normnue)
 
         # Neutron multiplicity correction factors
-        # TODO: replace alphas
+        # TODO: replace alphas: done for now, possibly update later
         # (Npdfs)
         neutnorm_1n = array([pdfnorm(pid, region_id=None, ntag=True)
                              for pid in range(len(pdfid) - 1)])[:, newaxis]
         neutnorm_other = array([pdfnorm(pid, region_id=None, ntag=False)
                                 for pid in range(len(pdfid) - 1)])[:, newaxis]
-        alpha = ones(len(pdfid) - 1) * 0.5
+        alpha = ones(len(pdfid) - 1) * 0.4
         alpha_sigma3 = alpha[:, newaxis] * sigmas3[newaxis, :]
         nfact_1n = 1 + alpha_sigma3 # (Npdfs-1 x Nsigmas3)
         nfact_other = 1 - alpha_sigma3 * neutnorm_1n / neutnorm_other
@@ -348,7 +348,8 @@ def systematics_atm(energies, sknum, model, elow,
         sysmatrix_high = ones(sys_shape_high)
         sysmatrix_high_1n = ones(sys_shape_high_1n)
 
-        nuefact = nuefact[:, :,newaxis, newaxis]
+        nuefact = nuefact[:, :, newaxis, newaxis]
+        nuefact_1n = nuefact_1n[:, :, newaxis, newaxis]
         ncfact_med = ncfact_med[newaxis, newaxis, :, newaxis]
         ncfact_high = ncfact_high[newaxis, newaxis, :, newaxis]
         nfact_1n = nfact_1n[newaxis, :, newaxis, newaxis, :]
@@ -362,7 +363,7 @@ def systematics_atm(energies, sknum, model, elow,
         sysmatrix_med[:, pdfid["nc"], :, :, :] = ncfact_med
         sysmatrix_med[:, range(len(pdfid)-1), :, :, :] *= nfact_other
 
-        sysmatrix_med_1n[:, pdfid["nue"], :, :, :] = nuefact
+        sysmatrix_med_1n[:, pdfid["nue"], :, :, :] = nuefact_1n
         sysmatrix_med_1n[:, pdfid["nc"], :, :, :] = ncfact_med
         sysmatrix_med_1n[:, range(len(pdfid)-1), :, :, :] *= nfact_1n
 
@@ -443,8 +444,8 @@ def get_like_sk4(nbackgrounds, nrelic, pdfs_distorted, pdfs_distorted_1n):
     if nbackgrounds.min() < 0:
         return -1e10
     wgauss = asym_gaussian()
-    wgauss2 = 0.20997 * exp(-arange(-2,2,0.5)**2/2.)
-    wgauss3 = 0.20997 * exp(-arange(-2, 3, 0.5)**2) # TODO: Change
+    wgauss2 = 0.20997 * exp(-arange(-2, 2, 0.5)**2 / 2.)
+    wgauss3 = 0.39894 * exp(-arange(-2, 3, 0.5)**2 / 2.) # TODO: Change
     nevents = array(list(nbackgrounds) + [nrelic])
     testing = pdfs_dist_high
     if sum(testing <= 0.0) > 0:
@@ -456,7 +457,7 @@ def get_like_sk4(nbackgrounds, nrelic, pdfs_distorted, pdfs_distorted_1n):
              + log(einsum("j,ijklm", nevents, pdfs_dist_high_1n)).sum(axis=0)
              + log(einsum("j,ijklm", nevents, pdfs_dist_med_1n)).sum(axis=0)
              + log(einsum("j,ijklm", nevents, pdfs_dist_low_1n)).sum(axis=0)
-             - nrelic - nbackgrounds.sum()) # TODO: maybe double counting?
+             - nrelic - nbackgrounds.sum())
     totmax = totlike.max()
     likenew = log((exp(totlike - totmax)
                    * wgauss[:, newaxis, newaxis]
@@ -521,7 +522,7 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0):
         ntot = sum([len(p) for p in pdfs])
         ntot += sum([len(p) for p in pdfs_1n])
         nccmu = ntot - maxlike[0] - nback_ini[1] - nback_ini[2] - nrelic
-        return concatenate([array([maxlike[0][0], nccmu]), nback_ini[1:],
+        return concatenate([array([maxlike[0][0], nccmu[0]]), nback_ini[1:],
                             array([nrelic, -maxlike[1]])])
 
 
@@ -533,7 +534,6 @@ def maxlike(sknum, model, elow, rmin=-5, rmax=100, rstep=0.1, quiet=True):
     elow = energy threshold (here, 16MeV)
     rmin, rmax, rstep = range and step of numbers of relic events for likelihood maximization
     '''
-    # TODO: ?? likemax = -1e10
     # Get signal and background spectra
     signal = None
     effsignal = 1.0
@@ -576,6 +576,7 @@ def maxlike(sknum, model, elow, rmin=-5, rmax=100, rstep=0.1, quiet=True):
         # Set backgrounds (preliminary estimates)
         init = initialize(sknum, pdfs_low, pdfs_med, pdfs_high, rmin)
         nue, numu, nc, mupi, _, _ = init
+        numu=numu[0] # TODO
 
         # Main maximization loop
         likedata = []
@@ -671,6 +672,8 @@ def maxlike(sknum, model, elow, rmin=-5, rmax=100, rstep=0.1, quiet=True):
         plotfit(results_sys[lpos,1], results_sys[lpos,2], results_sys[lpos,3],
                 results_sys[lpos,4], results_sys[lpos,5], model, sknum, elow,
                 signal=signal, background=bgs_sk4)
+
+        plt.savefig("test.pdf")
     if ':' not in model:
         return limit*fluxfac[model], fluxfac[model], results_sys
     else:
@@ -742,19 +745,20 @@ def maxlike(sknum, model, elow, rmin=-5, rmax=100, rstep=0.1, quiet=True):
 #     return analyse(column_stack((results[0][:,:-1], liketot)), final = True)
 
 def plotregion(region, data, nnue, nnumu, nnc, nmupi, nrelic, model,
-               sknum, elow, ax, signal = None, background = None):
+               sknum, elow, ax, ntag=None, signal=None, background=None):
     #plt.figure()
     step = 2
-    en= arange(elow, 90, 0.1)
-    nuecc = nnue * array([pdf(ee, sknum, model, elow, pdfid["nue"],
-                              region, background) for ee in en])
-    numucc = nnumu * array([pdf(ee, sknum, model, elow, pdfid["numu"],
-                            region, background) for ee in en])
-    nc = nnc * array([pdf(ee, sknum, model, elow, pdfid["nc"],
-                          region, background) for ee in en])
-    mupi = nmupi * array([pdf(ee, sknum, model, elow, pdfid["mupi"],
-                              region, background) for ee in en])
-    relic = nrelic * array([pdf(ee, sknum, model, elow, 4, region, signal = signal) for ee in en])
+    en = arange(elow, 90, 0.1)
+    nuecc = nnue * array([pdf(ee, sknum, model, elow, pdfid["nue"], region,
+                             ntag=ntag, backgrounds=background) for ee in en])
+    numucc = nnumu * array([pdf(ee, sknum, model, elow, pdfid["numu"], region,
+                             ntag=ntag, backgrounds=background) for ee in en])
+    nc = nnc * array([pdf(ee, sknum, model, elow, pdfid["nc"], region,
+                          ntag=ntag, backgrounds=background) for ee in en])
+    mupi = nmupi * array([pdf(ee, sknum, model, elow, pdfid["mupi"], region,
+                             ntag=ntag, backgrounds=background) for ee in en])
+    relic = nrelic * array([pdf(ee, sknum, model, elow, 4, region,
+                                ntag=ntag,signal=signal) for ee in en])
     ax.plot(en, step*nuecc, label = r"$\nu_e$ CC")
     ax.plot(en, step*nc, label = "NC")
     ax.plot(en, step*numucc, label = r"$\nu_\mu$ CC")
@@ -771,17 +775,32 @@ def plotregion(region, data, nnue, nnumu, nnc, nmupi, nrelic, model,
 
 def plotfit(nnue, nnumu, nnc, nmupi, nrelic, model, sknum, elow,
             signal=None, background=None):
-    _, (ax1, ax2, ax3) = plt.subplots(1,3,sharey = True)
-    samplow, sampmed, samphigh = low[sknum-1], med[sknum-1], high[sknum-1]
-    if sknum == 4:
+    if sknum < 4:
+        _, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+        samplow, sampmed, samphigh = low[sknum-1], med[sknum-1], high[sknum-1]
+        plotregion(1, sampmed, nnue, nnumu, nnc, nmupi, nrelic, model, sknum,
+                   elow, ax2, signal=signal, background=background)
+        plotregion(2, samphigh, nnue, nnumu, nnc, nmupi, nrelic, model, sknum,
+                   elow, ax3, signal=signal, background=background)
+        plotregion(0, samplow, nnue, nnumu, nnc, nmupi, nrelic, model, sknum,
+                   elow, ax1, signal=signal, background=background)
+    else:
+        _, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(2, 3, sharey=True)
+        samplow, sampmed, samphigh = low[sknum-1], med[sknum-1], high[sknum-1]
         samplow_1n, sampmed_1n, samphigh_1n = low_ntag, med_ntag, high_ntag
-    plotregion(1, sampmed, nnue, nnumu, nnc, nmupi, nrelic,
-               model, sknum, elow, ax2, signal, background)
-    plotregion(2, samphigh, nnue, nnumu, nnc, nmupi, nrelic,
-               model, sknum, elow, ax3, signal, background)
-    plotregion(0, samplow, nnue, nnumu, nnc, nmupi, nrelic,
-               model, sknum, elow, ax1, signal, background)
-    plt.subplots_adjust(wspace = 0)
+        plotregion(1, sampmed, nnue, nnumu, nnc, nmupi, nrelic,
+                    model, sknum, elow, ax2, False, signal, background)
+        plotregion(2, samphigh, nnue, nnumu, nnc, nmupi, nrelic,
+                    model, sknum, elow, ax3, False, signal, background)
+        plotregion(0, samplow, nnue, nnumu, nnc, nmupi, nrelic,
+                    model, sknum, elow, ax1, False, signal, background)
+        plotregion(1, sampmed_1n, nnue, nnumu, nnc, nmupi, nrelic,
+                    model, sknum, elow, ax5, True, signal, background)
+        plotregion(2, samphigh_1n, nnue, nnumu, nnc, nmupi, nrelic,
+                    model, sknum, elow, ax6, True, signal, background)
+        plotregion(0, samplow_1n, nnue, nnumu, nnc, nmupi, nrelic,
+                    model, sknum, elow, ax4, True, signal, background)
+    plt.subplots_adjust(wspace=0)
 
 def analyse(likes, final = False):
     lmax = likes[:, -1].max()
@@ -795,15 +814,16 @@ def analyse(likes, final = False):
     l90 = rel[searchsorted(exp(likes[:, -1] - lmax).cumsum(), 0.9 * norm)]
     return lmax, best, errplus, errminus, l90
 
-# TODO: update sk4 systematics
+
 def applysys(likes,sknum,eff):
     ''' Get gaussian pdf for systematics '''
     print(f"Signal efficiency is {eff}")
-    if sknum < 4:
-        syseff = sys_eff[sknum - 1]
-    else:
-        syseff = sys_eff[sknum - 1]
-        syseff_1n = sys_eff_sk4_ntag
+    syseff = sys_eff[sknum - 1]
+    # if sknum < 4:
+    #     syseff = sys_eff[sknum - 1]
+    # else:
+    #     syseff = sys_eff[sknum - 1] # TODO: update sk4 systematics
+    #     syseff_1n = sys_eff_sk4_ntag
     lower = max(eff * (1 - 6*syseff), 1e-10)
     upper = min(eff * (1 + 6*syseff), 0.999)
     step = (upper - lower)/1000.
@@ -838,9 +858,6 @@ def initialize(sknum, low, med, high, rel):
 
     # Maximize likelihoods over backgrounds in signal region
     likemax = getmaxlike(rel, array([nback/5.,nc,mupi]), low, med, high, sknum)
-    print(mupi, nc)
-    print(likemax)
-    print(nevlow, nevhigh, nevmed)
     return likemax
 
 def initialize_sk4(sknum, low, med, high, low_1n, med_1n, high_1n, rel):
@@ -858,10 +875,7 @@ def initialize_sk4(sknum, low, med, high, low_1n, med_1n, high_1n, rel):
     # Maximize likelihoods over backgrounds in signal region
     likemax = getmaxlike_sk4(rel, array([nback/5.,nc,mupi]), [low, med, high],
                              [low_1n, med_1n, high_1n])
-    print(mupi, nc)
-    print(likemax)
-    print(nevlow, nevhigh, nevmed)
     return likemax
 
 
-maxlike(4, "lma", 16)
+maxlike(3, "lma", 16, quiet=False)
