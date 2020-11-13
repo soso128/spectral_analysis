@@ -2,9 +2,10 @@
 Wrapper classes for relic and SK-IV backgrounds.
 '''
 from pickle import load as loadpick
-from numpy import digitize
+from numpy import digitize, array
 from scipy import interpolate
 from scipy.integrate import quad
+
 
 class bg_sk4:
     ''' Usage:
@@ -12,17 +13,19 @@ class bg_sk4:
     nc.pdf(energy, region)
     '''
     def __init__(self, ev_type, cut_bins, cut_effs, cut_bins_n, cut_effs_n,
-                 pdf_dir, elow, elow_n=None):
+                 pdf_dir, elow, elow_n=None, ehigh=90.0):
         ''' 0 < ev_type < 3 for nue, numu, nc, or mupi background.
         cut_bins should be a list of N energy bin edges.
         cut_effs should be a list of N-1 cut efficiencies.
         '''
-        if elow < 16.0:
-            raise ValueError("Can't go lower than 16 MeV!") #TODO: change?
+        if elow < 10.0:
+            raise ValueError("Can't go lower than 10 MeV!")
         if elow_n is None:
             elow_n = elow
+        if elow_n < 10.0:
+            raise ValueError("Can't go lower than 10 MeV!")
         self.elows = [elow, elow_n]
-        self.ehigh = 90.0
+        self.ehigh = ehigh
 
         bins, effs = self._adjust_effs(cut_bins, cut_effs, elow, self.ehigh)
         bins_n, effs_n = self._adjust_effs(cut_bins_n, cut_effs_n, elow_n, self.ehigh)
@@ -78,7 +81,6 @@ class bg_sk4:
         if energy < self.elows[ntag] or energy > self.ehigh:
             raise ValueError("Energy (%0.2f) outside range (%0.2f-%0.2f)"
                              % (energy, self.elows[ntag], self.ehigh))
-            # return 1e-10
 
     def pdf_before_cuts(self, energy, region, ntag):
         ''' Properly normalized pdf, before cuts '''
@@ -96,6 +98,10 @@ class bg_sk4:
                         continue
                     elif e_lo < self.elows[ntag]:
                         e_lo = self.elows[ntag]
+                    if e_lo > self.ehigh:
+                        continue
+                    elif e_hi > self.ehigh:
+                        e_hi = self.ehigh
                     a0, _ = quad(self.pdf_before_cuts, e_lo,
                                  e_hi, args=(region, ntag))
                     area += a0 * cut_eff
@@ -121,9 +127,10 @@ class relic_sk:
     Wrapper for relic signal pdf. For SK-IV, pdf has 3 Cherenkov angle
     regions and 2 ntag regions.
     '''
-    def __init__(self, sknum, spectrum_energies, spectrum_values,
-                 efficiency_func, efficiency_func_n=None,
-                 elow=16.0, elow_n=None):
+    def __init__(self, sknum, spectrum_energies, spectrum_values, ch_frac,
+                 efficiency_func, efficiency_func_n=None, elow=16.0,
+                 elow_n=None, ehigh=90.0, ntag_ebins=None, ntag_effs=None,
+                 ntag_bgs=None, ntag_eff_ps=None, ntag_bg_ps=None):
         ''' efficiency_func should only depend on energy.'''
         if elow < 16.0:
             raise ValueError("Can't go lower than 16 MeV!")
@@ -131,27 +138,39 @@ class relic_sk:
             raise ValueError("lengths of spectrum_energies and spectrum_values don't match")
         if elow < min(spectrum_energies):
             raise ValueError("elow must be within given spectrum")
+        if elow_n is not None:
+            if elow_n < 14.0:
+                raise ValueError("Can't go lower than 14 MeV for ntag!")
+            if elow_n < min(spectrum_energies):
+                raise ValueError("elow must be within given spectrum")
 
         self.sknum = sknum
         self.energies = spectrum_energies
         self.spec_values = spectrum_values
-        # self.eff = efficiency_func
-        # self.eff_n = efficiency_func_n
         self.effs = [efficiency_func, efficiency_func_n]
         self.elows = [elow, elow_n]
-        self.ehigh = 90.0
-        self.cherenkov_frac = [9.433e-04, 9.925e-01, 6.525e-03]
+        self.ehigh = ehigh
+        self.cherenkov_frac = ch_frac
         self.nregions_frac = [1.0]
+        self.ntag_ebins = ntag_ebins
+        self.ntag_effs = ntag_effs
+        self.ntag_bgs = array(ntag_bgs)
+        self.ntag_bg_ps = ntag_bg_ps
 
         if sknum == 4:
-            assert efficiency_func_n is not None
+            ntagvars = [efficiency_func_n, ntag_ebins, ntag_effs,
+                        ntag_bgs, ntag_eff_ps, ntag_bg_ps]
+            for nv in ntagvars:
+                assert nv is not None
             if elow_n is None:
                 self.elows[1] = elow
-            self.nregions_frac = [0.1, 0.9] # TODO: Update neutron fractions?
+            self.ntag_effs = array(ntag_effs) * ntag_eff_ps
+            self.nregions_frac = self._get_ntag_fracs()
 
         self.spec = interpolate.interp1d(self.energies, self.spec_values,
                                          bounds_error=False, fill_value=0)
         self.norm0 = self._get_norm0() # Normalization of source pdf to 1
+        self.norm_16_90 = self._get_norm_19_90() # Norm of 16-90 MeV range
         self.norm = self._get_norm() # Normalization after cuts to 1
 
     def _check_valid_energy(self, energy, ntag=False):
@@ -159,11 +178,41 @@ class relic_sk:
             raise ValueError("Energy (%0.2f) outside range (%0.2f-%0.2f)"
                               % (energy, self.elows[ntag], self.ehigh))
 
+    def _ntag_weight(self, E, ncap, ntag=True):
+        ebin = digitize(E, self.ntag_ebins)
+        ef = self.ntag_effs[ebin-1]
+        bgrate = self.ntag_bgs[ebin-1]
+
+        # Probability of tagging exactly 1 true neutron
+        prob_1n = ncap * ef * (1 - ef)**(ncap - 1)
+        # Probability of mistagging exactly 1 accidental
+        prob_1b = self.ntag_bg_ps * bgrate * (1 - bgrate)**(self.ntag_bg_ps - 1)
+        prob_0n = (1 - ef)**(ncap)
+        prob_0b = (1 - bgrate)**(self.ntag_bg_ps)
+
+        weight_1n = prob_1n * prob_0b + prob_1b * prob_0n
+        if ntag:  # 1-neutron region
+            return weight_1n
+        else:  # 0 or multiple neutrons region
+            return 1 - weight_1n
+
+    def _get_ntag_fracs(self):
+        fracs = [[], []]
+        for en in self.ntag_ebins[:-1]:
+            fracs[0] += [self._ntag_weight(en + 0.1, 1, ntag=False)]
+            fracs[1] += [self._ntag_weight(en + 0.1, 1, ntag=True)]
+        return fracs
+
+
     def _spectrum_before_cuts(self, energy, region, ntag=False):
         ''' Unnormed pdf '''
-        n_frac = self.nregions_frac[ntag]
         ch_frac = self.cherenkov_frac[region]
-        return self.spec(energy) * ch_frac * n_frac
+        res = self.spec(energy) * ch_frac
+        if self.sknum == 4:
+            ebin = digitize(energy, self.ntag_ebins) - 1
+            n_frac = self.nregions_frac[ntag][ebin]
+            res *= n_frac
+        return res
 
     def _get_norm0(self):
         area = 0.0
@@ -171,6 +220,14 @@ class relic_sk:
             for region in range(3):
                 area += quad(self._spectrum_before_cuts, self.elows[ntag],
                              self.ehigh, args=(region, ntag))[0]
+        return 1.0 / area
+
+    def _get_norm_19_90(self):
+        area = 0.0
+        for ntag in range(len(self.nregions_frac)):
+            for region in range(3):
+                area += quad(self._spectrum_before_cuts, 16.0,
+                             90.0, args=(region, ntag))[0]
         return 1.0 / area
 
     def pdf_before_cuts(self, energy, region, ntag=False):
@@ -184,9 +241,13 @@ class relic_sk:
 
     def _spectrum_after_cuts(self, energy, region, ntag=False):
         eff = self.effs[ntag](energy)
-        n_frac = self.nregions_frac[ntag]
         ch_frac = self.cherenkov_frac[region]
-        return self.spec(energy) * eff * n_frac * ch_frac
+        res = self.spec(energy) * eff * ch_frac
+        if self.sknum == 4:
+            ebin = digitize(energy, self.ntag_ebins) - 1
+            n_frac = self.nregions_frac[ntag][ebin]
+            res *= n_frac
+        return res
 
     def _get_norm(self):
         area = 0.0
@@ -197,8 +258,13 @@ class relic_sk:
         return 1.0 / area
 
     def overall_efficiency(self):
-        ''' Cut efficiency over the entire pdf '''
-        return self._get_norm0() / self._get_norm()
+        ''' Cut efficiency over the entire pdf within our energy region '''
+        return self.norm0 / self.norm
+
+    def overall_efficiency_16_90(self):
+        ''' Cur efficiency relative to 16-90 MeV energy range'''
+        return self.norm_16_90 / self.norm
+
 
     def pdf(self, energy, region, ntag=False):
         ''' Properly normalized pdf, after cuts '''
