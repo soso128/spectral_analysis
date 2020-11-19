@@ -169,8 +169,9 @@ class relic_sk:
 
         self.spec = interpolate.interp1d(self.energies, self.spec_values,
                                          bounds_error=False, fill_value=0)
-        self.norm0 = self._get_norm0() # Normalization of source pdf to 1
-        self.norm_16_90 = self._get_norm_19_90() # Norm of 16-90 MeV range
+        self.norm0 = self._get_norm0() # Norm of source pdf to 1 in ana range
+        self.norm_16_90 = self._get_norm_lims(16, 90) # Norm in 16-90 MeV range
+        self.norm_all = self._get_norm_all()  # Norm in whole range
         self.norm = self._get_norm() # Normalization after cuts to 1
 
     def _check_valid_energy(self, energy, ntag=False):
@@ -222,12 +223,16 @@ class relic_sk:
                              self.ehigh, args=(region, ntag))[0]
         return 1.0 / area
 
-    def _get_norm_19_90(self):
+    def _get_norm_lims(self, lo, hi):
         area = 0.0
         for ntag in range(len(self.nregions_frac)):
             for region in range(3):
-                area += quad(self._spectrum_before_cuts, 16.0,
-                             90.0, args=(region, ntag))[0]
+                area += quad(self._spectrum_before_cuts, lo, hi,
+                             args=(region, ntag))[0]
+        return 1.0 / area
+
+    def _get_norm_all(self):
+        area = quad(self.spec, 0, 100)[0]
         return 1.0 / area
 
     def pdf_before_cuts(self, energy, region, ntag=False):
@@ -258,13 +263,16 @@ class relic_sk:
         return 1.0 / area
 
     def overall_efficiency(self):
-        ''' Cut efficiency over the entire pdf within our energy region '''
+        ''' Cut efficiency within our energy region '''
         return self.norm0 / self.norm
 
     def overall_efficiency_16_90(self):
-        ''' Cur efficiency relative to 16-90 MeV energy range'''
+        ''' Cut efficiency relative to 16-90 MeV energy spectrum'''
         return self.norm_16_90 / self.norm
 
+    def overall_efficiency_all(self):
+        ''' Cut efficiency over the whole srn spectrum '''
+        return self.norm_all / self.norm
 
     def pdf(self, energy, region, ntag=False):
         ''' Properly normalized pdf, after cuts '''

@@ -38,7 +38,7 @@ modelid = {"lma": 0, "faild": -3, "malaney": -1, "ksw": -2, "woosley": -4}
 # Signal Cherenkov angle fractions
 s_ch_frac = [9.433e-04, 9.925e-01, 6.525e-03]
 
-# 3rd reduction efficiencies TODO: sk4 third red efficiencies: done
+# 3rd reduction efficiencies
 effs_sk4 = loadtxt("efficiencies/efficiencies_sk4.txt")
 effsk4 = interp1d(effs_sk4[:,0], effs_sk4[:,1], bounds_error=False,
                   fill_value = (effs_sk4[0,1], effs_sk4[-1,1]))
@@ -122,37 +122,76 @@ def load_signal_pdf(sknum, model, elow, ehigh, elow_1n):
                             elow=elow, ehigh=ehigh)
         else:
             eff_func_ntag = lambda z: seff_sk(z, ntag=True)
-            print(elow)
             return relic_sk(sknum, en, spec, s_ch_frac, eff_func_nontag,
                             eff_func_ntag, elow=elow, ehigh=ehigh,
                             elow_n=elow_1n, ntag_ebins=ntag_ebins,
                             ntag_effs=ntag_effs, ntag_bgs=ntag_bgs,
                             ntag_eff_ps=ntag_eff_ps, ntag_bg_ps=ntag_bg_ps)
 
+    def spec_flux(flux, low, high, smear=True):
+        """ Return spectrum given neutrino flux,
+        and positron energy bounds """
+        en = arange(low, high + 0.1, 0.1)
+        spec0 = array([sns.ibd_spectrum_flux(ee, flux) for ee in en])
+        spec, en = spec0[~isnan(spec0)], en[~isnan(spec0)] # remove undefined
+        if smear:
+            _, spec = sns.smear_ibd_spectrum(en, column_stack((en, spec)), sknum)
+        return en, spec
+
+    def spec_params(mod, imf, csfr, low, high, smear=True):
+        """ Return spectrum given parametrization,
+        and positron energy bounds """
+        en = arange(low, high + 0.1, 0.1)
+        spec0 = array([sns.ibd_spectrum(ee, mod, imf, csfr) for ee in en])
+        spec, en = spec0[~isnan(spec0)], en[~isnan(spec0)] # remove undefined
+        if smear:
+            _, spec = sns.smear_ibd_spectrum(en, column_stack((en, spec)), sknum)
+        return en, spec
+
+    def tot_rate(en_full, spec_full, low, high, ntag=None, nfracs=None):
+        en = en_full[(en_full >= low) & (en_full <= high)]
+        spec = spec_full[(en_full >= low) & (en_full <= high)]
+        if ntag is not None:
+            totrate = 0
+            for e, sp in zip(en, spec):
+                ebin = digitize(e, ntag_ebins) - 1
+                nfrac = nfracs[ntag][ebin]
+                totrate += nfrac * sp
+        else:
+            totrate = spec.sum()
+        return totrate * (en[1] - en[0])
+
+
     print(f"Load model {model}")
-    if sknum == 4:
-        elow_spec = elow_1n
-    else:
-        elow_spec = elow
+    # elow_spec = elow
+    # if sknum == 4:
+    #     elow_spec = min(elow, elow_1n)
     if ":" not in model:
         # These are discrete models
-        flux = loadtxt(f"models/flux_cross_{model}.dat")
-        en = arange(elow_spec, ehigh + 0.1, 0.1)
-        spec = array([sns.ibd_spectrum_flux(ee, flux) for ee in en])
-        ee, spec = sns.smear_ibd_spectrum(en, column_stack((en, spec)), sknum)
-        rel = relic(en, spec)
-        return rel, fluxfac[model]
+        flux = loadtxt(f"models/flux_cross_{model}.dat")  # Enu, flux
+        fflux = interp1d(flux[:, 0], flux[:, 1], bounds_error=True)
+        totflux, _ = quad(fflux, 17.3, 100)
+        en, spec_full = spec_flux(flux, 0, 100)
     else:
         print(f"Loading {model}")
         imf = sns.imfs['salpeter']
         csfr = sns.csfr_fiducial
         mod = literal_eval(model)
-        en = arange(elow, ehigh + 0.1, 0.1)
-        spec = array([sns.ibd_spectrum(ee, mod, imf, csfr) for ee in en])
-        ee,spec = sns.smear_ibd_spectrum(en, column_stack((en, spec)), sknum)
-        totrate = spec[ee > elow].sum() * (ee[1] - ee[0])
-        rel = relic(en, spec)
-        return rel, totrate
+        totflux, _ = quad(sns.snflux, 17.3, 100, args=(mod, imf, csfr))
+        en, spec_full = spec_params(mod, imf, csfr, 0, 100)
+    rel = relic(en, spec_full)
+    totrate = tot_rate(en, spec_full, elow, ehigh)
+    if sknum == 4 and elow != elow_1n:
+        if elow_1n < elow:
+            totrate_low = tot_rate(en, spec_full, elow_1n, elow,
+                                   ntag=True, nfracs=rel.nregions_frac)
+        else:
+            totrate_low = tot_rate(en, spec_full, elow, elow_1n,
+                                   ntag=False, nfracs=rel.nregions_frac)
+            totrate = tot_rate(en, spec_full, elow_1n, ehigh)
+        totrate = totrate + totrate_low
+    flux_fac = totflux / totrate
+    return rel, flux_fac
 
 
 def pdf(energy, sknum, model, elow, pdfid, region,
@@ -177,7 +216,7 @@ def pdf(energy, sknum, model, elow, pdfid, region,
 def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
                     energies_n=None, backgrounds=None):
     '''
-    Compute distorsion functions due to systematics (for atmospheric spectra)
+    Compute distortion functions due to systematics (for atmospheric spectra)
     Must provide energies=[energies_mid, energies_hi] arrays if sk1/2/3.
     If sk4, energies=[lo, mid, hi], and energies_n=[lo_n, mid_n, hi_n]
     for (0 | >1) neutron region and 1 neutron region respectively.
@@ -270,8 +309,8 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
         energies_low_n, energies_med_n, energies_high_n = energies_n
 
         # NC and neutron multiplicity distrtion sigmas
-        sigmas2 = arange(-2, 2, 0.5) / 2.
-        sigmas3 = arange(-2, 3, 0.5)
+        sigmas2 = arange(-2, 2.5, 0.5) / 2. # TODO
+        sigmas3 = arange(-2, 3.5, 0.5)
 
         # Normalization and correction factors for nue CC
         norm0 = pdfnorm(pdfid["nue"], regionid["medium"])
@@ -369,7 +408,7 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0):
         if nbackgrounds.min() < 0:
             return -1e10
         wgauss = asym_gaussian()
-        wgauss2 = asym_gaussian() if sknum < 4 else 0.20997 * exp(-arange(-2,2,0.5)**2/2.)
+        wgauss2 = asym_gaussian() if sknum < 4 else 0.20997 * exp(-arange(-2,2.5,0.5)**2/2.)
         nevents = array(list(nbackgrounds) + [nrelic])
         totlike = (log(einsum("j,ijkl", nevents, pdfs_high)).sum(axis = 0)
                 + log(dot(nevents,pdfs_low.T)).sum(axis = 0)
@@ -425,8 +464,8 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0):
         if nbackgrounds.min() < 0:
             return -1e10
         wgauss = asym_gaussian()
-        wgauss2 = 0.20997 * exp(-arange(-2, 2, 0.5)**2 / 2.)
-        wgauss3 = 0.39894 * exp(-arange(-2, 3, 0.5)**2 / 2.) # TODO: check
+        wgauss2 = 0.40823 * exp(-arange(-2, 2.5, 0.5)**2 / 2.)
+        wgauss3 = 0.40379 * exp(-arange(-2, 3.5, 0.5)**2 / 2.)
         nevents = array(list(nbackgrounds) + [nrelic])
         # testing = pdfs_dist_high
         # if sum(testing <= 0.0) > 0:
@@ -454,7 +493,7 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0):
     else:
         def funclike(nback):
             return -get_like_nosys_sk4(nback, nback_ini[1], nback_ini[2])
-        maxlike = fmin(funclike, nback_ini[0], full_output = True, disp = 0)
+        maxlike = fmin(funclike, nback_ini[0], full_output=True, disp=0)
         ntot = sum([len(p) for p in pdfs])
         ntot += sum([len(p) for p in pdfs_1n])
         nccmu = ntot - maxlike[0] - nback_ini[1] - nback_ini[2] - nrelic
@@ -462,7 +501,7 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0):
                             array([nrelic, -maxlike[1]])])
 
 
-def analyse(likes, final = False):
+def analyse(likes, final=False):
     """ Extract limits """
     lmax = likes[:, -1].max()
     bestpos = likes[:, -1].argmax()
@@ -512,8 +551,8 @@ def plotfit(nnue, nnumu, nnc, nmupi, nrelic, model, sknum, elow, ehigh, elow_1n,
                 ax.set(ylabel="Number of events after cuts\n0 / >1 neutron tags")
         if ax.is_first_row():
             titles = [r"Low sideband (20 < $\Theta_C$ < 38)",
-                    r"Signal region (38 < $\Theta_C$ < 50)",
-                    r"High sideband (78 < $\Theta_C$ < 90)"]
+                      r"Signal region (38 < $\Theta_C$ < 50)",
+                      r"High sideband (78 < $\Theta_C$ < 90)"]
             ax.set(title=titles[region])
         ax.set(xlabel = "E$_p$ (MeV)")
 
@@ -538,7 +577,7 @@ def plotfit(nnue, nnumu, nnc, nmupi, nrelic, model, sknum, elow, ehigh, elow_1n,
 
 
 def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
-            rstep=0.1, quiet=True, figname=None):
+            rstep=0.1, quiet=True, outdir='.'):
     '''
     Main maximum likelihood function
     sknum = 1,2,3 (SK phase)
@@ -631,7 +670,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         return likemax
 
     def applysys(likes, eff, rmin, rmax, rstep):
-        ''' Get gaussian pdf for systematics '''
+        ''' Apply gaussian systematic efficiency error correction'''
         print(f"Signal efficiency is {eff}")
         syseff = sys_eff[sknum - 1]
         lower = max(eff * (1 - 6*syseff), 1e-10)
@@ -640,17 +679,17 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         epsrange = arange(lower, upper+step, step)
         if len(epsrange) > 1001:
             epsrange = epsrange[:-1]
-        pgaus = exp(-0.5 * (epsrange - eff)**2/(sys_eff[sknum - 1]*eff)**2)
+        pgaus = exp(-0.5 * (epsrange - eff)**2 / (syseff * eff)**2)
         pgaus /= pgaus.sum()
         # Convolution (Simpson integration)
         lmax = likes[:, -1].max()
-        flikes = interp1d(likes[:, -2], exp(likes[:, -1] - lmax),
+        flikes = interp1d(likes[:, -2], exp(likes[:, -1] - lmax), # like(relic)
                           bounds_error=False, fill_value = 0)
-        rates = arange(rmin,rmax,rstep)
-        lconv = flikes(rates[:, newaxis] * epsrange[newaxis, :] * livetimes[sknum - 1]/365.25* 0.5)
+        rates = arange(rmin, rmax, rstep)
+        lconv = flikes(rates[:, newaxis] * epsrange[newaxis, :] * livetimes[sknum - 1]/365.25* 0.5) # TODO
         simpsoncoeff = array([step/3.] + list((1 + (arange(1,1000)%2))*2./3 * step) + [step/3.])
-        ltot = (lconv * (pgaus * epsrange * simpsoncoeff)).sum(axis = 1)
-        likenew = log(ltot) + lmax
+        ltot = (lconv * (pgaus * epsrange * simpsoncoeff)).sum(axis = 1) # TODO
+        likenew = log(ltot) + lmax # TODO
         return column_stack((likes[:, :-1], likenew))
 
     samplow, sampmed, samphigh = load_sample()
@@ -662,8 +701,9 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
     # Get signal and background spectra
     signal = None
     effsignal = 1.0
-    totrate = 0
-    signal, totrate = load_signal_pdf(sknum, model, elow, ehigh, elow_1n)
+    signal, flux_fac = load_signal_pdf(sknum, model, elow, ehigh, elow_1n)
+    if ':' not in model:
+        flux_fac = fluxfac[model]
 
     bgs_sk4 = None
     bg_sk4_dir = "./pdf_bg_sk4"
@@ -763,23 +803,23 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                 print("Step {}/1000, like = {}".format(i, likedata[-1][-1]), flush=True)
 
     results = column_stack((arange(rmin, rmax, rstep), likedata))
-    results = results[results[:, 0] >= 0]
+    results = results[results[:, 0] >= 0]   # results[i] = rel, nback, rel, like
 
     # Systematic efficiency error correction + limits
     _, best2, errplus2, errminus2, limit2 = analyse(results)
     results_sys = applysys(results, effsignal, rmin, rmax, rstep)
     _, best, errplus, errminus, limit = analyse(results_sys, final=True)
 
+    flux_90cl = limit * flux_fac
+    lpos = results_sys[:, -1].argmax()
+
     # Save and display results
-    savetxt("fit_sk{}.txt".format(sknum), column_stack((results, results_sys[:, -1])))
+    savetxt(f"{outdir}/fit_sk{sknum}.txt", column_stack((results, results_sys[:, -1])))
     print("SK-{}".format(sknum), "Best fit:")
     print("{} +{} -{} relic evts/yr".format(best, errplus, errminus))
     print("{} +{} -{} relic evts".format(best2, errplus2, errminus2))
     print("90% c.l. relic event rate: {} ev/yr {}".format(limit, limit2))
-    if ':' not in model:
-        flux_90cl = limit * fluxfac[model]
-        print("90% c.l. {} /cm^2/s {} MeV".format(flux_90cl, elow))
-    lpos = results_sys[:, -1].argmax()
+    print("90% c.l. {} /cm^2/s > 17.3 MeV".format(flux_90cl))
     print("nu-e events {}".format(results_sys[lpos, 1]))
     print("nu-mu events {}".format(results_sys[lpos, 2]))
     print("NC elastic events {}".format(results_sys[lpos, 3]))
@@ -798,13 +838,9 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                 results_sys[lpos,4], results_sys[lpos,5], model, sknum,
                 elow, ehigh, elow_1n, samples=[samplow, sampmed, samphigh],
                 samples_n=samples_n, signal=signal, background=bgs_sk4)
-        if figname:
-            plt.savefig(figname)
+        plt.savefig(f"{outdir}/fit_sk{sknum}.pdf")
         plt.clf()
-    if ':' not in model:
-        return limit*fluxfac[model], fluxfac[model], results_sys
-    else:
-        return limit, totrate, results_sys
+    return limit * flux_fac, flux_fac, results_sys
 
 
 def combine(results):
@@ -813,6 +849,23 @@ def combine(results):
     for r in results[1:]:
         liketot += r[:, -1] - r[:, -1].max()
     return analyse(column_stack((results[0][:,:-1], liketot)), final=True)
+
+
+def combine_fluxes(results, fluxfacts):
+    """ Combined flux limits """
+    flux_sampling = arange(0, 50.1, 0.1)
+    rels, likes = results[0][:, 0], results[0][:, -1]
+    fluxes = rels * fluxfacts[0]
+    flike = interp1d(fluxes, likes, bounds_error=False, fill_value=1e-10)
+    newlikes = flike(flux_sampling)
+    liketot = newlikes - newlikes.max()
+    for i, r in enumerate(results[1:]):
+        rels, likes = r[:, 0], r[:, -1]
+        fluxes = rels * fluxfacts[i + 1]
+        flike = interp1d(fluxes, likes, bounds_error=False, fill_value=1e-10)
+        newlikes = flike(flux_sampling)
+        liketot += newlikes - newlikes.max()
+    return analyse(column_stack((flux_sampling, liketot)))
 
 
 def fullike(model, elow, ehigh, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
@@ -824,16 +877,22 @@ def fullike(model, elow, ehigh, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
         elow_sk4_1n = elow
     if ehigh_sk4 is None:
         ehigh_sk4 = ehigh
-    like1 = maxlike(1, model, elow, ehigh, elow_sk4_1n,
-                    rmin, rmax, rstep, False, outdir + "/like1.pdf")
-    like2 = maxlike(2, model, elow, ehigh, elow_sk4_1n,
-                    rmin, rmax, rstep, False, outdir + "/like2.pdf")
-    like3 = maxlike(3, model, elow, ehigh, elow_sk4_1n,
-                    rmin, rmax, rstep, False, outdir + "/like3.pdf")
-    like4 = maxlike(4, model, elow_sk4, ehigh_sk4, elow_sk4_1n,
-                    rmin, rmax, rstep, False, outdir + "/like4.pdf")
-    res = combine([like1[-1],like2[-1],like3[-1], like4[-1]])
-    l90 = res[-1]
+    like1 = maxlike(1, model, elow, ehigh, elow_sk4_1n, rmin, rmax,
+                    rstep, quiet=quiet, outdir=outdir)
+    like2 = maxlike(2, model, elow, ehigh, elow_sk4_1n, rmin, rmax,
+                    rstep, quiet=quiet, outdir=outdir)
+    like3 = maxlike(3, model, elow, ehigh, elow_sk4_1n, rmin, rmax,
+                    rstep, quiet=quiet, outdir=outdir)
+    like4 = maxlike(4, model, elow_sk4, ehigh_sk4, elow_sk4_1n, rmin, rmax,
+                    rstep, quiet=quiet, outdir=outdir)
+    fluxlims = [like1[0], like2[0], like3[0], like4[0]]
+    fluxfacs = [like1[1], like2[1], like3[1], like4[1]]
+    results = [like1[2], like2[2], like3[2], like4[2]]
+    ratelims = array(fluxlims) / array(fluxfacs)
+    res = combine(results)
+    res_fluxes = combine_fluxes(results, fluxfacs)
+    _, ratebest_comb, ratepl_comb, ratemin_comb, ratelim_comb = res
+    _, fluxbest_comb, fluxpl_comb, fluxmin_comb, fluxlim_comb = res_fluxes
 
     if not quiet:
         plt.style.use("seaborn")
@@ -860,15 +919,16 @@ def fullike(model, elow, ehigh, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
         plt.savefig(outdir + "/full_like.pdf")
         plt.clf()
 
-    if ":" not in model:
-        res = list(res) + [like1[1] * res[-1]]
-    print(f"Limits are {like1[0]} {like2[0]} {like3[0]} {like4[0]} {l90}")
-    return list(res) + [like1[1]]
+    print(f"Best fit rate: {ratebest_comb} + {ratepl_comb} - {ratemin_comb}")
+    print("90%% c.l. rate limits are: %f %f %f %f > 16 MeV" % tuple(ratelims))
+    print(f"90%% c.l. combined rate limit: {ratelim_comb} > 16 MeV")
+
+    print(f"Best fit flux: {fluxbest_comb} + {fluxpl_comb} - {fluxmin_comb}")
+    print("90%% c.l. flux limits are: %f %f %f %f /cm^2/s > 17.3 MeV" % tuple(fluxlims))
+    print(f"90%% c.l. combined flux limit: {fluxlim_comb} /cm^2/s > 17.3 MeV")
 
 
 if __name__ == "__main__":
-    # maxlike(4, "lma", elow=20, ehigh=80, elow_1n=16, quiet=False)
-
     modelname = argv[1]
     directory = argv[2]
 

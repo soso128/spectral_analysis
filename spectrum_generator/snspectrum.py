@@ -54,6 +54,11 @@ def SRNflux(enu, tnu, imfpars, csfrpars):
         rate = quad(SRNflux_integrand, 0, 5, args = (enu, tnu, imfpars, csfrpars), epsabs = rate[0]/100)
     return c/H0 * rate[0], c/H0 * rate[1]
 
+def snflux(enu, specpar, imfpars, csfrpars):
+    """ DSNB Neutrino flux """
+    args = {**csfrpars, **imfpars}
+    sn.snrate(enu, specpar, *args.values())
+
 # Integrand for SK DSNB rate as a function of cos(theta) given a flux
 def ibd_integrand_flux(c, ee, flux):
     """
@@ -62,9 +67,9 @@ def ibd_integrand_flux(c, ee, flux):
     ee is the positron energy
     flux is a 2D array giving the flux as a function of the neutrino energy
     """
-    fflux = interp1d(flux[:, 0], flux[:, 1], bounds_error = False, fill_value = 0)
+    fflux = interp1d(flux[:, 0], flux[:, 1], bounds_error=False, fill_value='extrapolate')
     en = sn.enu(ee, c)
-    res = fflux(en) * sn.dsigma(en, 0, c) * 0.047390723e42
+    res = fflux(en) * sn.dsigma_sv(en, c) * 0.047390723e42
     return res
 
 # Integrand for SK DSNB rate as a function of cos(theta)
@@ -79,7 +84,7 @@ def ibd_integrand(c, ee, specpar, imfpars, csfrpars):
     en = sn.enu(ee, c)
     args = {**csfrpars, **imfpars}
     # Use C++ function for DSNB rate calculation (muuuch faster)
-    res = sn.snrate(en, specpar, *args.values()) * sn.dsigma(en, 0, c) * 0.047390723e42
+    res = sn.snrate(en, specpar, *args.values()) * sn.dsigma_sv(en, c) * 0.047390723e42
     return res
 
 # SK DSNB spectrum as a function of positron energy given a flux
