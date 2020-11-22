@@ -56,8 +56,9 @@ effs_3rdred = [effsk1, effsk2, effsk3, effsk4]
 spaeff_sk1 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
 spaeff_sk2 = array([[17.5, 0.762], [20, 0.882], [26, 1.0]])
 spaeff_sk3 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
-spaeff_sk4 = array([[16, 0.76], [18, 0.863], [20, 0.898], [24, 1.0]])
-spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4]
+spaeff_sk4 = array([[16, 0.852], [18, 0.925], [20, 0.935], [24, 0.98]])
+spaeff_sk4_nontag = array([[16, 0.725], [18, 0.855], [20, 0.898], [24, 0.98]])
+spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4_nontag]
 
 soleff_sk1 = array([[16, 0.738], [17, 0.821], [18, 0.878],
                     [19, 0.965], [20, 1]])
