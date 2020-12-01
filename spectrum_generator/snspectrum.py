@@ -15,6 +15,11 @@ csfr_up = {'rho0': 0.0213, 'alpha': 3.6, 'beta': -0.1, 'gamma': -2.5, 'z1': 1, '
 csfr_fiducial = {'rho0': 0.0178, 'alpha': 3.4, 'beta': -0.3, 'gamma': -3.5, 'z1': 1, 'z2': 4}
 csfr_lower = {'rho0': 0.0142, 'alpha': 3.2, 'beta': -0.5, 'gamma': -4.5, 'z1': 1, 'z2': 4}
 
+# Conversion factors and constants
+ergtoMeV = 1.6e-6
+nprotons = 1.5e33 # Number of protons in SK's fiducial volume
+nsecyear = 365.25 * 3600 * 24 # Number of seconds in one year
+
 # Energy resolution functions in different phases of SK
 def energy_sigma(ee, sknum):
     if sknum == 1:
@@ -57,7 +62,7 @@ def SRNflux(enu, tnu, imfpars, csfrpars):
 def snflux(enu, specpar, imfpars, csfrpars):
     """ DSNB Neutrino flux """
     args = {**csfrpars, **imfpars}
-    sn.snrate(enu, specpar, *args.values())
+    return sn.snrate(enu, specpar, *args.values())
 
 # Integrand for SK DSNB rate as a function of cos(theta) given a flux
 def ibd_integrand_flux(c, ee, flux):
@@ -69,7 +74,7 @@ def ibd_integrand_flux(c, ee, flux):
     """
     fflux = interp1d(flux[:, 0], flux[:, 1], bounds_error=False, fill_value='extrapolate')
     en = sn.enu(ee, c)
-    res = fflux(en) * sn.dsigma_sv(en, c) * 0.047390723e42
+    res = fflux(en) * sn.dsigma_sv(en, c) * nprotons * nsecyear
     return res
 
 # Integrand for SK DSNB rate as a function of cos(theta)
@@ -141,7 +146,7 @@ def param_scan(pbar, fbhmax, fbhstep):
     #       alpha: pinching parameters
     #       lum: luminosities
     #       pbar: survival probability for antineutrinos
-    specpar = {"type": 3, "fBH": 0, "emeanE_NS": 15, "emeanE_BH": 24, "alphaE": 3.5, "emeanX_NS": 18, "emeanX_BH": 25, "alphaX": 2.5, "lumE_BH": 2.6, "lumX_NS": 1, "lumX_BH": 0.4 * 2.6, "lumi": 5e52 * 1e3/0.0016, "pbar": pbar}
+    specpar = {"type": 3, "fBH": 0, "emeanE_NS": 15, "emeanE_BH": 24, "alphaE": 3.5, "emeanX_NS": 18, "emeanX_BH": 25, "alphaX": 2.5, "lumE_BH": 2.6, "lumX_NS": 1, "lumX_BH": 0.4 * 2.6, "lumi": 5e52 * ergtoMeV, "pbar": pbar}
     f = arange(0, fbhmax + fbhstep, fbhstep)
     x = arange(0, 30.1, 0.1)
     spectra = []
@@ -152,10 +157,10 @@ def param_scan(pbar, fbhmax, fbhstep):
     return spectra
 
 def gen_spec():
-    specpar = {"type": 0, "tnu": 5, "lumi": 3e53 * 1e3/0.0016}
+    specpar = {"type": 0, "tnu": 5, "lumi": 3e53 * ergtoMeV}
     x = arange(1, 80.1, 0.1)
     spec = array(list(map(lambda ee: ibd_spectrum(ee, specpar, imfs['salpeter'], csfr_up), x)))
-    savetxt("/home/sonia/relic/signal/dsnb_tnu{}_lumi{}_nosmear.txt".format(int(specpar['tnu']), int(specpar['lumi'] * 0.0016/1e56)), column_stack((x, spec)))
+    savetxt("/home/sonia/relic/signal/dsnb_tnu{}_lumi{}_nosmear.txt".format(int(specpar['tnu']), int(specpar['lumi'] * ergtoMeV/1e53)), column_stack((x, spec)))
     return x,spec
 
 # Scan
@@ -167,7 +172,7 @@ def param_scan_full(fbhmax, fbhstep):
     #       alpha: pinching parameters
     #       lum: luminosities
     #       pbar: survival probability for antineutrinos
-    specpar = {"type": 3, "fBH": 0, "emeanE_NS": 15, "emeanE_BH": 0, "alphaE": 3.5, "emeanX_NS": 18, "emeanX_BH": 0, "alphaX": 2.5, "lumE_BH": 0, "lumX_NS": 1, "lumX_BH": 0, "lumi": 5e52 * 1e3/0.0016, "pbar": 0}
+    specpar = {"type": 3, "fBH": 0, "emeanE_NS": 15, "emeanE_BH": 0, "alphaE": 3.5, "emeanX_NS": 18, "emeanX_BH": 0, "alphaX": 2.5, "lumE_BH": 0, "lumX_NS": 1, "lumX_BH": 0, "lumi": 5e52 * ergtoMeV, "pbar": 0}
     f = arange(0, fbhmax + fbhstep, fbhstep)
     ebhe = [15,20,25]
     ebhx = [20,25,33]
