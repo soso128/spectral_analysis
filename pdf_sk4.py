@@ -167,16 +167,17 @@ class relic_sk:
             self.ntag_effs = array(ntag_effs) * ntag_eff_ps
             self.nregions_frac = self._get_ntag_fracs()
 
+        self.spec_min = min(self.energies)
         self.spec = interpolate.interp1d(self.energies, self.spec_values,
                                          bounds_error=False, fill_value=0)
         self.norm0 = self._get_norm0() # Norm of source pdf to 1 in ana range
         self.norm_16_90 = self._get_norm_lims(16, 90) # Norm in 16-90 MeV range
-        self.norm_all = self._get_norm_all()  # Norm in whole range
+        # self.norm_all = self._get_norm_all()  # Norm in whole range
         self.norm = self._get_norm() # Normalization after cuts to 1
 
     def _check_valid_energy(self, energy, ntag=False):
         if energy < self.elows[ntag] or energy > self.ehigh:
-            raise ValueError("Energy (%0.2f) outside range (%0.2f-%0.2f)"
+            raise ValueError("Energy (%0.2f) outside analysis range (%0.2f-%0.2f)"
                               % (energy, self.elows[ntag], self.ehigh))
 
     def _ntag_weight(self, E, ncap, ntag=True):
@@ -204,7 +205,6 @@ class relic_sk:
             fracs[1] += [self._ntag_weight(en + 0.1, 1, ntag=True)]
         return fracs
 
-
     def _spectrum_before_cuts(self, energy, region, ntag=False):
         ''' Unnormed pdf '''
         ch_frac = self.cherenkov_frac[region]
@@ -224,6 +224,8 @@ class relic_sk:
         return 1.0 / area
 
     def _get_norm_lims(self, lo, hi):
+        if lo < self.spec_min:
+            raise ValueError("Outside interpolation range")
         area = 0.0
         for ntag in range(len(self.nregions_frac)):
             for region in range(3):
@@ -231,9 +233,9 @@ class relic_sk:
                              args=(region, ntag))[0]
         return 1.0 / area
 
-    def _get_norm_all(self):
-        area = quad(self.spec, 0, 100)[0]
-        return 1.0 / area
+    # def _get_norm_all(self):
+    #     area = quad(self.spec, 0, 100)[0]
+    #     return 1.0 / area
 
     def pdf_before_cuts(self, energy, region, ntag=False):
         ''' Properly normalized pdf, before cuts '''
@@ -246,12 +248,15 @@ class relic_sk:
 
     def _spectrum_after_cuts(self, energy, region, ntag=False):
         eff = self.effs[ntag](energy)
+        # print(eff)
         ch_frac = self.cherenkov_frac[region]
         res = self.spec(energy) * eff * ch_frac
         if self.sknum == 4:
             ebin = digitize(energy, self.ntag_ebins) - 1
             n_frac = self.nregions_frac[ntag][ebin]
             res *= n_frac
+        # print(energy, self.spec(energy))
+        # print(res)
         return res
 
     def _get_norm(self):
@@ -268,11 +273,13 @@ class relic_sk:
 
     def overall_efficiency_16_90(self):
         ''' Cut efficiency relative to 16-90 MeV energy spectrum'''
+        # print(self.norm_16_90)
+        # print(self.norm)
         return self.norm_16_90 / self.norm
 
-    def overall_efficiency_all(self):
-        ''' Cut efficiency over the whole srn spectrum '''
-        return self.norm_all / self.norm
+    # def overall_efficiency_all(self):
+    #     ''' Cut efficiency over the whole srn spectrum '''
+    #     return self.norm_all / self.norm
 
     def pdf(self, energy, region, ntag=False):
         ''' Properly normalized pdf, after cuts '''

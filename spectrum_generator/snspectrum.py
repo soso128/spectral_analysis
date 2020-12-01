@@ -72,7 +72,7 @@ def ibd_integrand_flux(c, ee, flux):
     ee is the positron energy
     flux is a 2D array giving the flux as a function of the neutrino energy
     """
-    fflux = interp1d(flux[:, 0], flux[:, 1], bounds_error=False, fill_value='extrapolate')
+    fflux = interp1d(flux[:, 0], flux[:, 1], bounds_error=False, fill_value=0)
     en = sn.enu(ee, c)
     res = fflux(en) * sn.dsigma_sv(en, c) * nprotons * nsecyear
     return res

@@ -19,7 +19,9 @@ mpl.rcParams['font.size'] = 15
 
 
 # livetimes
-livetimes = array([1497.44, 793.71, 562.04, 2790.1])
+livetimes = array([1497.44, 793.71, 562.04, 2970.1])
+aft_eff = 0.94
+livetimes[3] *= aft_eff
 
 # energy-independent efficiency sys
 efftot = {"lma": [0.7975,0.56703,0.77969],
@@ -74,7 +76,8 @@ soleff = [soleff_sk1, soleff_sk2, soleff_sk3, soleff_sk4]
 ntag_ebins = [16, 90]
 bdt_cuts = [0.620]
 emin, emax = ntag_ebins[0], ntag_ebins[-1]
-bdt_roc = genfromtxt('roc_curve_N10gt5_cut6_nlow1_newsys.roc')
+# bdt_roc = genfromtxt('roc_curve_N10gt5_cut6_nlow1_newsys.roc')
+bdt_roc = genfromtxt('/disk02/usr6/elhedri/relic_sk4_ana/cut_optimization/spec_ntag_optimization/roc_curve/roc_curve_N10gt5_cut6_nlow1_newsys_fakedata.roc')
 cuts_roc, roc_effs, roc_bg = bdt_roc[:,0], bdt_roc[:,1], bdt_roc[:,2]
 ntag_eff = interp1d(cuts_roc, roc_effs)
 ntag_bg = interp1d(cuts_roc, roc_bg)
@@ -88,9 +91,13 @@ mupi_rescale_low = [1.367, 1.75, 1.34, 1.34] # mupi from low to medium
 mupi_rescale_high = [0.12777, 0.1, 0.13, 0.13] # mupi from low to high
 nc_rescale = [1.16313, 1.42, 1.14, 1.14] # NC from high to medium
 
-# Neutron multiplicity systematcs
-alpha = ones(len(pdfid) - 1) * 0.4
+# systematics multipliers
+nc_mult = 1
+cc_mult = 1
+n_mult = 1
 
+# Neutron multiplicity systematcs
+alpha = ones(len(pdfid) - 1) * 0.4 * n_mult
 
 def load_signal_pdf(sknum, model, elow, ehigh, elow_1n):
     ''' Load relic signal model pdfs, either from a discrete (named) model
@@ -170,7 +177,7 @@ def load_signal_pdf(sknum, model, elow, ehigh, elow_1n):
     if ":" not in model:
         # These are discrete models
         flux = loadtxt(f"models/flux_cross_{model}.dat")  # Enu, flux
-        fflux = interp1d(flux[:, 0], flux[:, 1], bounds_error=True)
+        fflux = interp1d(flux[:, 0], flux[:, 1], bounds_error=False, fill_value=0)
         totflux, _ = quad(fflux, 17.3, 100)
         en, spec_full = spec_flux(flux, 0, 100)
     else:
@@ -181,18 +188,22 @@ def load_signal_pdf(sknum, model, elow, ehigh, elow_1n):
         totflux, _ = quad(sns.snflux, 17.3, 100, args=(mod, imf, csfr))
         en, spec_full = spec_params(mod, imf, csfr, 0, 100)
     rel = relic(en, spec_full)
-    totrate = tot_rate(en, spec_full, elow, ehigh)
-    if sknum == 4 and elow != elow_1n:
-        if elow_1n < elow:
-            totrate_low = tot_rate(en, spec_full, elow_1n, elow,
-                                   ntag=True, nfracs=rel.nregions_frac)
-        else:
-            totrate_low = tot_rate(en, spec_full, elow, elow_1n,
-                                   ntag=False, nfracs=rel.nregions_frac)
-            totrate = tot_rate(en, spec_full, elow_1n, ehigh)
-        totrate = totrate + totrate_low
+    # if sknum == 2:  # TODO
+    #     totrate = tot_rate(en, spec_full, 16, 90)
+    # else:
+    totrate = tot_rate(en, spec_full, 16, 90)
+    # totrate = tot_rate(en, spec_full, elow, ehigh)
+    # if sknum == 4 and elow != elow_1n:
+    #     if elow_1n < elow:
+    #         totrate_low = tot_rate(en, spec_full, elow_1n, elow,
+    #                                ntag=True, nfracs=rel.nregions_frac)
+    #     else:
+    #         totrate_low = tot_rate(en, spec_full, elow, elow_1n,
+    #                                ntag=False, nfracs=rel.nregions_frac)
+    #         totrate = tot_rate(en, spec_full, elow_1n, ehigh)
+    #     totrate = totrate + totrate_low
     flux_fac = totflux / totrate
-    return rel, flux_fac
+    return rel, flux_fac, totrate, totflux
 
 
 def pdf(energy, sknum, model, elow, pdfid, region,
@@ -200,8 +211,10 @@ def pdf(energy, sknum, model, elow, pdfid, region,
     ''' PDF function for signal or background in given region. '''
     if sknum < 4:
         if pdfid == 4:
-            return likes.pdf(energy, sknum, modelid[model], elow, 4, region)
-        #if pdfid == 4: return signal.pdf(energy,region)
+            # try:
+            # return likes.pdf(energy, sknum, modelid[model], elow, 4, region)
+            # except KeyError:  # Models not used by Kirk
+            return signal.pdf(energy, region) # Always use our own SRN pdf
         if pdfid in range(4):
             return likes.pdf(energy, sknum, 0, elow, pdfid, region)
     elif sknum == 4:
@@ -284,15 +297,15 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
         # Normalization and correction factors for nue CC
         norm0 = pdfnorm(pdfid["nue"], regionid["medium"])
         norm1 = pdfmoment(pdfid["nue"], regionid["medium"])
-        normnue = 1. / (1 + 0.5 * sigmas * (norm1 / norm0 - 16) / 74)
-        nuefact = 1 + 0.5 * sigmas[newaxis,:] * (energies_med[:,newaxis] - 16)/74
+        normnue = 1. / (1 + 0.5 * sigmas * cc_mult * (norm1 / norm0 - 16) / 74)
+        nuefact = 1 + 0.5 * sigmas[newaxis,:] * cc_mult * (energies_med[:,newaxis] - 16)/74
         nuefact *= normnue # (Nenergies x Nsigmas)
 
         # Correction factors for NC
         normncmed = pdfnorm(pdfid["nc"], regionid["medium"])
         normnchigh = pdfnorm(pdfid["nc"], regionid["high"])
-        ncfact_med = 1 + sigmas2  # (Nsigmas2)
-        ncfact_high = 1 - sigmas2 * normncmed/normnchigh #  (Nsigmas2)
+        ncfact_med = 1 + sigmas2 * nc_mult # (Nsigmas2)
+        ncfact_high = 1 - sigmas2 * nc_mult * normncmed/normnchigh #  (Nsigmas2)
 
         # make systematics tensors (Nenergies x Npdfs x Nsigmas x Nsigmas2)
         sysmatrix_med = ones((len(energies_med), 5, len(sigmas), len(sigmas2)))
@@ -310,23 +323,23 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
         energies_low_n, energies_med_n, energies_high_n = energies_n
 
         # NC and neutron multiplicity distrtion sigmas
-        sigmas2 = arange(-2, 2.5, 0.5) / 2. # TODO
+        sigmas2 = arange(-2, 2.5, 0.5) / 2.
         sigmas3 = arange(-2, 3.5, 0.5)
 
         # Normalization and correction factors for nue CC
         norm0 = pdfnorm(pdfid["nue"], regionid["medium"])
         norm1 = pdfmoment(pdfid["nue"], regionid["medium"])
-        normnue = 1. / (1 + 0.5 * sigmas * (norm1 / norm0 - 16) / 74)
-        nuefact = 1 + 0.5*sigmas[newaxis,:]*(energies_med[:,newaxis]-16)/74
+        normnue = 1. / (1 + 0.5 * sigmas * cc_mult * (norm1 / norm0 - 16) / 74)
+        nuefact = 1 + 0.5*sigmas[newaxis,:] * cc_mult * (energies_med[:,newaxis]-16)/74
         nuefact *= normnue # (Nenergies x Nsigmas)
-        nuefact_1n = 1+0.5*sigmas[newaxis,:]*(energies_med_n[:,newaxis]-16)/74
+        nuefact_1n = 1 + 0.5 * sigmas[newaxis,:] * cc_mult * (energies_med_n[:,newaxis]-16)/74
         nuefact_1n *= normnue
 
         # Correction factors for NC
         normncmed = pdfnorm(pdfid["nc"], regionid["medium"])
         normnchigh = pdfnorm(pdfid["nc"], regionid["high"])
-        ncfact_med = 1 + sigmas2  # (Nsigmas2)
-        ncfact_high = 1 - sigmas2 * normncmed / normnchigh  # (Nsigmas2)
+        ncfact_med = 1 + sigmas2 * nc_mult  # (Nsigmas2)
+        ncfact_high = 1 - sigmas2 * nc_mult * normncmed / normnchigh  # (Nsigmas2)
         #ncfact_high = where(ncfact_high < 0, 0, ncfact_high)
 
         # Neutron multiplicity correction factors
@@ -582,7 +595,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
     '''
     Main maximum likelihood function
     sknum = 1,2,3 (SK phase)
-    model = SRN model (right now, only "ando")
+    model = SRN model
     elow = energy threshold (here, 16MeV)
     rmin, rmax, rstep = range and step of numbers of relic events for likelihood maximization
     '''
@@ -689,9 +702,12 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         rates = arange(rmin, rmax, rstep)
         lconv = flikes(rates[:, newaxis] * epsrange[newaxis, :] * livetimes[sknum - 1]/365.25* 0.5) # TODO
         simpsoncoeff = array([step/3.] + list((1 + (arange(1,1000)%2))*2./3 * step) + [step/3.])
-        ltot = (lconv * (pgaus * epsrange * simpsoncoeff)).sum(axis = 1) # TODO
-        likenew = log(ltot) + lmax # TODO
+        ltot = (lconv * (pgaus * epsrange * simpsoncoeff)).sum(axis = 1)
+        likenew = log(ltot) + lmax
         return column_stack((likes[:, :-1], likenew))
+
+    if sknum == 2:
+        elow = 17.5
 
     samplow, sampmed, samphigh = load_sample()
     samples_n = None
@@ -702,23 +718,27 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
     # Get signal and background spectra
     signal = None
     effsignal = 1.0
-    signal, flux_fac = load_signal_pdf(sknum, model, elow, ehigh, elow_1n)
-    if ':' not in model:
-        flux_fac = fluxfac[model]
+    signal, flux_fac, pred_rate, pred_flux = load_signal_pdf(sknum, model, elow, ehigh, elow_1n)
+    # if ':' not in model:
+    #     try:
+    #         flux_fac = fluxfac[model]
+    #     except KeyError:
+    #         pass
+    # Always use calculated fluxfacs
 
     bgs_sk4 = None
     bg_sk4_dir = "./pdf_bg_sk4"
-    if sknum < 4:
-        effsignal = efftot[model][sknum - 1]
-    else:
-        effsignal = signal.overall_efficiency_16_90()
-        # Load background pdfs
-        # WARNING!!! 16 MeV threshold is hardcoded there!
-        cut_bins_ntag, cut_effs_ntag = get_spasolbins(ntag=True)
-        cut_bins, cut_effs = get_spasolbins(ntag=False)
-        bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs,
-                   cut_bins_ntag, cut_effs_ntag, bg_sk4_dir,
-                   elow, ehigh=ehigh, elow_n=elow_1n) for i in range(4)]
+    # if sknum < 4:    # TODO
+    #     effsignal = efftot[model][sknum - 1]   # TODO
+    # else:
+    effsignal = signal.overall_efficiency_16_90() # Always use calculated eff.
+    # Load background pdfs
+    # WARNING!!! 16 MeV threshold is hardcoded there!
+    cut_bins_ntag, cut_effs_ntag = get_spasolbins(ntag=True)
+    cut_bins, cut_effs = get_spasolbins(ntag=False)
+    bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs,
+                cut_bins_ntag, cut_effs_ntag, bg_sk4_dir,
+                elow, ehigh=ehigh, elow_n=elow_1n) for i in range(4)]
     print(f"Efficiency is {effsignal}")
 
     # Get pdfs. PDF matrices: (Nen x Npdf)
@@ -811,6 +831,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
     results_sys = applysys(results, effsignal, rmin, rmax, rstep)
     _, best, errplus, errminus, limit = analyse(results_sys, final=True)
 
+    flux_best = best * flux_fac
     flux_90cl = limit * flux_fac
     lpos = results_sys[:, -1].argmax()
 
@@ -818,6 +839,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
     savetxt(f"{outdir}/fit_sk{sknum}.txt", column_stack((results, results_sys[:, -1])))
     print("SK-{}".format(sknum), "Best fit:")
     print("{} +{} -{} relic evts/yr".format(best, errplus, errminus))
+    print("{} +{} -{} /cm^2/s > 17.3 MeV".format(flux_best, errplus*flux_fac, errminus*flux_fac))
     print("{} +{} -{} relic evts".format(best2, errplus2, errminus2))
     print("90% c.l. relic event rate: {} ev/yr {}".format(limit, limit2))
     print("90% c.l. {} /cm^2/s > 17.3 MeV".format(flux_90cl))
@@ -841,7 +863,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                 samples_n=samples_n, signal=signal, background=bgs_sk4)
         plt.savefig(f"{outdir}/fit_sk{sknum}.pdf")
         plt.clf()
-    return limit * flux_fac, flux_fac, results_sys
+    return limit * flux_fac, flux_fac, results_sys, pred_rate, pred_flux
 
 
 def combine(results):
@@ -866,7 +888,7 @@ def combine_fluxes(results, fluxfacts):
         flike = interp1d(fluxes, likes, bounds_error=False, fill_value=1e-10)
         newlikes = flike(flux_sampling)
         liketot += newlikes - newlikes.max()
-    return analyse(column_stack((flux_sampling, liketot)))
+    return analyse(column_stack((flux_sampling, liketot)), final=True)
 
 
 def fullike(model, elow, ehigh, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
@@ -889,6 +911,8 @@ def fullike(model, elow, ehigh, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
     fluxlims = [like1[0], like2[0], like3[0], like4[0]]
     fluxfacs = [like1[1], like2[1], like3[1], like4[1]]
     results = [like1[2], like2[2], like3[2], like4[2]]
+    pred_rate = like1[3]
+    pred_flux = like1[4]
     ratelims = array(fluxlims) / array(fluxfacs)
     res = combine(results)
     res_fluxes = combine_fluxes(results, fluxfacs)
@@ -900,16 +924,16 @@ def fullike(model, elow, ehigh, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
         plt.figure()
         plt.xlabel("SRN events/year")
         plt.ylabel("Likelihood")
-        x = like1[-1][:, 0]/2
-        plt.plot(x, like1[-1][:, -1] - like1[-1][:,-1].max(),
+        x = results[0][:, 0]/2
+        plt.plot(x, results[0][:, -1] - results[0][:,-1].max(),
                  label="SK-I", alpha=0.5)
-        plt.plot(x, like2[-1][:, -1] - like2[-1][:,-1].max(),
+        plt.plot(x, results[1][:, -1] - results[1][:,-1].max(),
                  '--', label="SK-II", alpha=0.5)
-        plt.plot(x, like3[-1][:, -1] - like3[-1][:,-1].max(),
+        plt.plot(x, results[2][:, -1] - results[2][:,-1].max(),
                  '-.', label="SK-III", alpha=0.5)
-        plt.plot(x, like4[-1][:, -1] - like4[-1][:,-1].max(),
+        plt.plot(x, results[3][:, -1] - results[3][:,-1].max(),
                  '--', label="SK-IV",linewidth=2)
-        likesum = like1[-1][:, -1] + like2[-1][:, -1] + like3[-1][:, -1] + like4[-1][:, -1]
+        likesum = results[0][:, -1] + results[1][:, -1] + results[2][:, -1] + results[3][:, -1]
         likesum -= likesum.max()
         plt.plot(x, likesum, label = "Combined", color = 'black')
         plt.plot([0,20], -0.5 * ones(2), 'r')
@@ -920,13 +944,17 @@ def fullike(model, elow, ehigh, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
         plt.savefig(outdir + "/full_like.pdf")
         plt.clf()
 
+    print("")
     print(f"Best fit rate: {ratebest_comb} + {ratepl_comb} - {ratemin_comb}")
     print("90%% c.l. rate limits are: %f %f %f %f > 16 MeV" % tuple(ratelims))
     print(f"90%% c.l. combined rate limit: {ratelim_comb} > 16 MeV")
+    print(f"Predicted rate: {pred_rate}")
 
+    print("")
     print(f"Best fit flux: {fluxbest_comb} + {fluxpl_comb} - {fluxmin_comb}")
     print("90%% c.l. flux limits are: %f %f %f %f /cm^2/s > 17.3 MeV" % tuple(fluxlims))
     print(f"90%% c.l. combined flux limit: {fluxlim_comb} /cm^2/s > 17.3 MeV")
+    print(f"Predicted flux: {pred_flux}")
 
 
 if __name__ == "__main__":
