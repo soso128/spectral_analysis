@@ -1,8 +1,11 @@
 #!/bin/bash
 ulimit -c 0 # disable core dumps
 
-spectral_dir=/disk02/usr6/giampaol/spectral/spectral_analysis
-declare -a modelnames=("lma" "faild" "ksw" "malaney" "woosley" "horiuchi_xi2_5crit0_5" "horiuchi_xi2_5crit0_1" "nakazato_nh_min", "nakazato_ih_max" "const")
+#spectral_dir=/disk02/usr6/giampaol/spectral/spectral_analysis
+spectral_dir=/disk02/usr6/elhedri/spectral_analysis
+declare -a modelnames=("volpe_nh" "volpe_ih")
+#declare -a modelnames=("horiuchi_xi2_5_crit0_5" "horiuchi_xi2_5_crit0_1" "nakazato_nh_min", "nakazato_ih_max")
+#declare -a modelnames=("lma" "faild" "ksw" "malaney" "woosley" "horiuchi_xi2_5_crit0_5" "horiuchi_xi2_5_crit0_1" "nakazato_nh_min" "nakazato_ih_max" "const")
 
 queue=ALL
 maxjobs=200

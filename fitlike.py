@@ -185,6 +185,7 @@ def load_signal_pdf(sknum, model, elow, ehigh, elow_1n):
         imf = sns.imfs['salpeter']
         csfr = sns.csfr_fiducial
         mod = literal_eval(model)
+        print(mod, imf, csfr)
         totflux, _ = quad(sns.snflux, 17.3, 100, args=(mod, imf, csfr))
         en, spec_full = spec_params(mod, imf, csfr, 0, 100)
     rel = relic(en, spec_full)
@@ -891,7 +892,7 @@ def combine_fluxes(results, fluxfacts):
     return analyse(column_stack((flux_sampling, liketot)), final=True)
 
 
-def fullike(model, elow, ehigh, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
+def fullike(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
             rmin=-5, rmax=100, rstep=0.1, quiet=False, outdir='.'):
     """ Fit SK I-IV data """
     if elow_sk4 is None:
@@ -902,7 +903,7 @@ def fullike(model, elow, ehigh, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
         ehigh_sk4 = ehigh
     like1 = maxlike(1, model, elow, ehigh, elow_sk4_1n, rmin, rmax,
                     rstep, quiet=quiet, outdir=outdir)
-    like2 = maxlike(2, model, elow, ehigh, elow_sk4_1n, rmin, rmax,
+    like2 = maxlike(2, model, elow_sk2, ehigh, elow_sk4_1n, rmin, rmax,
                     rstep, quiet=quiet, outdir=outdir)
     like3 = maxlike(3, model, elow, ehigh, elow_sk4_1n, rmin, rmax,
                     rstep, quiet=quiet, outdir=outdir)
@@ -961,5 +962,5 @@ if __name__ == "__main__":
     modelname = argv[1]
     directory = argv[2]
 
-    fullike(modelname, elow=16, ehigh=90, elow_sk4=20,
+    fullike(modelname, elow=16, ehigh=90, elow_sk2 = 17.5, elow_sk4=20,
             ehigh_sk4=80, elow_sk4_1n=16, outdir=directory)
