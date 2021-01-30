@@ -14,6 +14,7 @@ path.append("spectrum_generator/")
 import snspectrum as sns
 import likes
 from pdf_sk4 import bg_sk4, relic_sk
+from esys_scale_res import esys
 
 mpl.rcParams['font.size'] = 15
 
@@ -228,7 +229,7 @@ def pdf(energy, sknum, model, elow, pdfid, region,
     else: raise ValueError("Invalid sknum")
 
 def systematics_escale_res(energies, sknum, model, elow, ehigh, elow_1n=None,
-                    energies_n=None, backgrounds=None):
+                    energies_n=None, backgrounds=None, signal=None):
 
     def pdfnorm(pdf_id, region_id, ntag=None):
         ''' Calculate PDF norm for given region.
@@ -238,7 +239,7 @@ def systematics_escale_res(energies, sknum, model, elow, ehigh, elow_1n=None,
             ''' PDF function depending only on energy '''
             ''' times systematics size '''
             return lambda en: pdf(en, sknum, model, elow, pdf_id,
-                                  region_id, ntag, backgrounds) * esys(
+                                  region_id, ntag, backgrounds, signal) * esys(
                                       en, sknum, region_id, pdf_id)
 
         if sknum == 4:
@@ -266,87 +267,105 @@ def systematics_escale_res(energies, sknum, model, elow, ehigh, elow_1n=None,
                               for rid in range(len(regionid))]
                 return sum(norm_1n) + sum(norm_other)
         else:
-            return quad(pdf_en(region_id), elow, ehigh)[0]
+            if region_id is not None:
+                return quad(pdf_en(region_id), elow, ehigh)[0]
+            else:
+                return sum(quad(pdf_en(rid, False), elow, ehigh)[0]
+                              for rid in range(len(regionid)))
 
-        # make systematics tensors (Nen x Npdfs x Nsig x Nsig2 x Nsig3)
-        sys_shape_low = (len(energies_low), len(pdfid), len(sigmas))
-        sys_shape_high = (len(energies_high),) + sys_shape_low[1:]
-        sys_shape_med = (len(energies_med),) + sys_shape_low[1:]
+    # Get energies
+    energies_low, energies_med, energies_high = energies
+    energies_low_1n, energies_med_1n, energies_high_1n = None, None, None
 
-        if sknum == 4:
-            sys_shape_low_1n = (len(energies_low_n),) + sys_shape_low[1:]
-            sys_shape_med_1n = (len(energies_med_n),) + sys_shape_low[1:]
-            sys_shape_high_1n = (len(energies_high_n),) + sys_shape_low[1:]
+    # make systematics tensors (Nen x Npdfs x Nsig)
+    sigmas = arange(-4,4.5,0.5)
+    sys_shape_low = (len(energies_low), len(pdfid), len(sigmas))
+    sys_shape_high = (len(energies_high),) + sys_shape_low[1:]
+    sys_shape_med = (len(energies_med),) + sys_shape_low[1:]
 
-        sysmatrix_low = ones(sys_shape_low)
-        sysmatrix_med = ones(sys_shape_med)
-        sysmatrix_high = ones(sys_shape_high)
+    sysmatrix_low = ones(sys_shape_low)
+    sysmatrix_med = ones(sys_shape_med)
+    sysmatrix_high = ones(sys_shape_high)
+    sysmatrix_low_1n = None
+    sysmatrix_med_1n = None
+    sysmatrix_high_1n = None
+
+    # Distorsion factors
+    nuenorm = pdfnorm(0,None)
+    ncnorm = pdfnorm(2,None)
+    mupinorm = pdfnorm(3,None)
+    relicnorm = pdfnorm(4,None)
+    print(f"Norms: {relicnorm} {nuenorm} {ncnorm} {mupinorm}")
+    relicfact = (1 + esys(energies_med,sknum,1,4)[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
+    print(f"Norms: {esys(44.4244,1,1,2)} {(1-4 * esys(44.4244,1,1,2))/(1 -4 * ncnorm)}")
+    nuefact = (1 + esys(energies_med,sknum,1,0)[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
+    ncfact_med = (1 + esys(energies_med,sknum,1,2)[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
+    ncfact_high = (1 + esys(energies_high,sknum,2,2)[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
+    mupifact_low = (1 + esys(energies_low,sknum,0,3)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
+    mupifact_med = (1 + esys(energies_med,sknum,1,3)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
+    mupifact_high = (1 + esys(energies_high,sknum,2,3)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
+
+    #relicfact = relicfact[:, :, newaxis]
+    #nuefact = nuefact[:, :, newaxis]
+    #ncfact_med = ncfact_med[:, :, newaxis]
+    #ncfact_high = ncfact_high[:, :, newaxis]
+    #mupifact_low = mupifact_low[:, :, newaxis]
+    #mupifact_med = mupifact_med[:, :, newaxis]
+    #mupifact_high = mupifact_high[:, :, newaxis]
+
+    print(sysmatrix_med.shape, nuefact.shape)
+    sysmatrix_med[:, pdfid["nue"], :] = nuefact
+    sysmatrix_med[:, pdfid["nc"], :] = ncfact_med
+    sysmatrix_med[:, pdfid["mupi"], :] = mupifact_med
+    sysmatrix_med[:, pdfid["rel"], :] = relicfact
+
+    sysmatrix_high[:, pdfid["nc"], :] = ncfact_high
+    sysmatrix_high[:, pdfid["mupi"], :] = mupifact_high
+
+    sysmatrix_low[:, pdfid["mupi"], :] = mupifact_low
+
+    if sknum == 4:
+        assert energies_n is not None
+        assert len(energies) == len(energies_n) == 3
+        energies_low_1n, energies_med_1n, energies_high_1n = energies_n  
+
+        sys_shape_low_1n = (len(energies_low_n),) + sys_shape_low[1:]
+        sys_shape_med_1n = (len(energies_med_n),) + sys_shape_low[1:]
+        sys_shape_high_1n = (len(energies_high_n),) + sys_shape_low[1:]
+
         sysmatrix_low_1n = ones(sys_shape_low_1n)
         sysmatrix_med_1n = ones(sys_shape_med_1n)
         sysmatrix_high_1n = ones(sys_shape_high_1n)
 
-        # Distorsion factors
-        sigmas = arange(-4,4.5,0.5)
-        nuenorm = pdfnorm(0,None)
-        ncnorm = pdfnorm(2,None)
-        mupinorm = pdfnorm(3,None)
-        relicnorm = pdfnorm(4,None)
-        relicfact = (1 + esys(energies_med,sknum,1,4) * sigmas[:,newaxis])/(1 + nuenorm * sigmas[:, newaxis])
-        nuefact = (1 + esys(energies_med,sknum,1,0) * sigmas[:,newaxis])/(1 + nuenorm * sigmas[:, newaxis])
-        ncfact_med = (1 + esys(energies_med,sknum,1,2) * sigmas[:,newaxis])/(1 + ncnorm * sigmas[:, newaxis])
-        ncfact_high = (1 + esys(energies_high,sknum,2,2) * sigmas[:,newaxis])/(1 + ncnorm * sigmas[:, newaxis])
-        mupifact_low = (1 + esys(energies_low,sknum,0,3) * sigmas[:,newaxis])/(1 + mupinorm * sigmas[:, newaxis])
-        mupifact_med = (1 + esys(energies_med,sknum,1,3) * sigmas[:,newaxis])/(1 + mupinorm * sigmas[:, newaxis])
-        mupifact_high = (1 + esys(energies_high,sknum,2,3) * sigmas[:,newaxis])/(1 + mupinorm * sigmas[:, newaxis])
+        relicfact_1n = (1 + esys(energies_med_n,sknum,1,4)[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
+        nuefact_1n = (1 + esys(energies_med_n,sknum,1,0)[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
+        ncfact_1n_med = (1 + esys(energies_med_n,sknum,1,2)[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
+        ncfact_1n_high = (1 + esys(energies_high_n,sknum,2,2)[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
+        mupifact_1n_low = (1 + esys(energies_low_n,sknum,0,3)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
+        mupifact_1n_med = (1 + esys(energies_med_n,sknum,1,3)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
+        mupifact_1n_high = (1 + esys(energies_high_n,sknum,2,3)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
 
-        relicfact = relicfact[:, :, newaxis]
-        nuefact = nuefact[:, :, newaxis]
-        ncfact_med = ncfact_med[:, :, newaxis]
-        ncfact_high = ncfact_high[:, :, newaxis]
-        mupifact_low = mupifact_low[:, :, newaxis]
-        mupifact_med = mupifact_med[:, :, newaxis]
-        mupifact_high = mupifact_high[:, :, newaxis]
+        #relicfact_1n = relicfact_1n[:, :, newaxis]
+        #nuefact_1n = nuefact_1n[:, :, newaxis]
+        #ncfact_1n_med = ncfact_1n_med[:, :, newaxis]
+        #ncfact_1n_high = ncfact_1n_high[:, :, newaxis]
+        #mupifact_1n_low = mupifact_1n_low[:, :, newaxis]
+        #mupifact_1n_med = mupifact_1n_med[:, :, newaxis]
+        #mupifact_1n_high = mupifact_1n_high[:, :, newaxis]
 
-        sysmatrix_med[:, pdfid["nue"], :] = nuefact
-        sysmatrix_med[:, pdfid["nc"], :] = ncfact_med
-        sysmatrix_med[:, pdfid["mupi"], :] = mupifact_med
-        sysmatrix_med[:, pdfid["relic"], :] = relicfact
+        sysmatrix_med_1n[:, pdfid["nue"], :] = nuefact_1n
+        sysmatrix_med_1n[:, pdfid["nc"], :] = ncfact_1n_med
+        sysmatrix_med_1n[:, pdfid["mupi"], :] = mupifact_1n_med
+        sysmatrix_med_1n[:, pdfid["rel"], :] = relicfact_1n
 
-        sysmatrix_high[:, pdfid["nc"], :] = ncfact_high
-        sysmatrix_high[:, pdfid["mupi"], :] = mupifact_high
+        sysmatrix_high_1n[:, pdfid["nc"], :] = ncfact_1n_high
+        sysmatrix_high_1n[:, pdfid["mupi"], :] = mupifact_1n_high
 
-        sysmatrix_low[:, pdfid["mupi"], :] = mupifact_low
+        sysmatrix_low_1n[:, pdfid["mupi"], :] = mupifact_low_1n
 
-        if sknum == 4:
-            relicfact_1n = (1 + esys(energies_med_n,sknum,1,4) * sigmas[:,newaxis])/(1 + nuenorm * sigmas[:, newaxis])
-            nuefact_1n = (1 + esys(energies_med_n,sknum,1,0) * sigmas[:,newaxis])/(1 + nuenorm * sigmas[:, newaxis])
-            ncfact_1n_med = (1 + esys(energies_med_n,sknum,1,2) * sigmas[:,newaxis])/(1 + ncnorm * sigmas[:, newaxis])
-            ncfact_1n_high = (1 + esys(energies_high_n,sknum,2,2) * sigmas[:,newaxis])/(1 + ncnorm * sigmas[:, newaxis])
-            mupifact_1n_low = (1 + esys(energies_low_n,sknum,0,3) * sigmas[:,newaxis])/(1 + mupinorm * sigmas[:, newaxis])
-            mupifact_1n_med = (1 + esys(energies_med_n,sknum,1,3) * sigmas[:,newaxis])/(1 + mupinorm * sigmas[:, newaxis])
-            mupifact_1n_high = (1 + esys(energies_high_n,sknum,2,3) * sigmas[:,newaxis])/(1 + mupinorm * sigmas[:, newaxis])
-
-            relicfact_1n = relicfact_1n[:, :, newaxis]
-            nuefact_1n = nuefact_1n[:, :, newaxis]
-            ncfact_1n_med = ncfact_1n_med[:, :, newaxis]
-            ncfact_1n_high = ncfact_1n_high[:, :, newaxis]
-            mupifact_1n_low = mupifact_1n_low[:, :, newaxis]
-            mupifact_1n_med = mupifact_1n_med[:, :, newaxis]
-            mupifact_1n_high = mupifact_1n_high[:, :, newaxis]
-
-            sysmatrix_med_1n[:, pdfid["nue"], :] = nuefact_1n
-            sysmatrix_med_1n[:, pdfid["nc"], :] = ncfact_1n_med
-            sysmatrix_med_1n[:, pdfid["mupi"], :] = mupifact_1n_med
-            sysmatrix_med_1n[:, pdfid["relic"], :] = relicfact_1n
-
-            sysmatrix_high_1n[:, pdfid["nc"], :] = ncfact_1n_high
-            sysmatrix_high_1n[:, pdfid["mupi"], :] = mupifact_1n_high
-
-            sysmatrix_low_1n[:, pdfid["mupi"], :] = mupifact_low_1n
-
-        sysm = sysmatrix_low, sysmatrix_med, sysmatrix_high
-        sysm_1n = sysmatrix_low_1n, sysmatrix_med_1n, sysmatrix_high_1n
-        return sysm + sysm_1n
+    sysm = sysmatrix_low, sysmatrix_med, sysmatrix_high
+    sysm_1n = sysmatrix_low_1n, sysmatrix_med_1n, sysmatrix_high_1n
+    return sysm + sysm_1n
 
 def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
                     energies_n=None, backgrounds=None):
@@ -435,7 +454,7 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
         sysmatrix_med[:,pdfid["nue"],:,:] = nuefact[:, :, newaxis]
         sysmatrix_med[:,pdfid["nc"],:,:] = ncfact_med[newaxis, newaxis, :]
         sysmatrix_high[:,pdfid["nc"],:,:] = ncfact_high[newaxis, newaxis, :]
-        return [], sysmatrix_med, sysmatrix_high
+        return sysmatrix_med, sysmatrix_high
 
     else:
         assert energies_n is not None
@@ -527,7 +546,7 @@ def asym_gaussian():
 def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0):
     ''' Maximum likelihood iteration '''
 
-    def get_like_nosys(ncce, nnc, nmupi):
+    def get_like_init(ncce, nnc, nmupi):
         ''' Likelihood without systematics, to initialize of bg numbers. '''
         ncce = ncce[0]
         ntot = len(pdfs_low) + len(pdfs_high) + len(pdfs_med)
@@ -538,6 +557,18 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0):
         totlike = log((nevents * pdfs_med).sum(axis = 1)).sum() - nevents.sum()
         return totlike
 
+    def get_like_nosys(nbackgrounds):
+        ''' Likelihood with systematics on atm spectral shapes'''
+        if nbackgrounds.min() < 0:
+            return -1e10
+        nevents = array(list(nbackgrounds) + [nrelic])
+        totlike = (log(dot(nevents,pdfs_low.T)).sum(axis = 0)
+                   + log(dot(nevents,pdfs_med.T)).sum(axis = 0)
+                   + log(dot(nevents,pdfs_high.T)).sum(axis = 0)
+                   - nrelic - nbackgrounds.sum()) # maybe double counting?
+        if isnan(totlike): raise ValueError("nan")
+        return totlike
+
     def get_like(nbackgrounds):
         ''' Likelihood with systematics on atm spectral shapes'''
         if nbackgrounds.min() < 0:
@@ -546,9 +577,9 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0):
         wgauss2 = asym_gaussian() if sknum < 4 else 0.20997 * exp(-arange(-2,2.5,0.5)**2/2.)
         nevents = array(list(nbackgrounds) + [nrelic])
         totlike = (log(einsum("j,ijkl", nevents, pdfs_high)).sum(axis = 0)
-                + log(dot(nevents,pdfs_low.T)).sum(axis = 0)
-                + log(einsum("j,ijkl", nevents, pdfs_med)).sum(axis = 0)
-                - nrelic - nbackgrounds.sum()) # maybe double counting?
+                   + log(dot(nevents,pdfs_low.T)).sum(axis = 0)
+                   + log(einsum("j,ijkl", nevents, pdfs_med)).sum(axis = 0)
+                   - nrelic - nbackgrounds.sum()) # maybe double counting?
         totmax = totlike.max()
         likenew = log((exp(totlike - totmax) * wgauss[:, newaxis] * wgauss2[newaxis,:]).sum()) + totmax
         return likenew
@@ -559,13 +590,14 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0):
             return -1e10
         nevents = array(list(nbackgrounds) + [nrelic])
         totlike = (log(einsum("j,ijk", nevents, pdfs_high)).sum(axis = 0)
-                + log(einsum("j,ijk", nevents, pdfs_med)).sum(axis = 0)
-                + log(einsum("j,ijk", nevents, pdfs_low)).sum(axis = 0)
-                - nrelic - nbackgrounds.sum()) # maybe double counting?
+                   + log(einsum("j,ijk", nevents, pdfs_med)).sum(axis = 0)
+                   + log(einsum("j,ijk", nevents, pdfs_low)).sum(axis = 0)
+                   - nrelic - nbackgrounds.sum()) # maybe double counting?
+        #if (nrelic == 0.1): print(f"Norm:  {nbackgrounds} {totlike[7]},")
         totmax = totlike.max()
         gauss = exp(-arange(-4,4.5,0.5)**2/2)
         gauss /= gauss.sum()
-        likenew = log((exp(totlike - totmax) * gauss[:, newaxis]).sum()) + totmax
+        likenew = log((exp(totlike - totmax)).sum()) + totmax
         return likenew
 
     funclike = None
@@ -578,7 +610,11 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0):
         maxlike = fmin(funclike, nback_ini, full_output = True, disp = 0)
         return append(maxlike[0], array([nrelic, -maxlike[1]]))
     if sys == 0:
-        funclike = lambda nback: -get_like_nosys(nback, nback_ini[1],
+        funclike = lambda nback: -get_like_nosys(nback)
+        maxlike = fmin(funclike, nback_ini, full_output = True, disp = 0)
+        return append(maxlike[0], array([nrelic, -maxlike[1]]))
+    if sys == -1:
+        funclike = lambda nback: -get_like_init(nback, nback_ini[1],
                                                  nback_ini[2])
         maxlike = fmin(funclike, nback_ini[0], full_output = True, disp = 0)
         ntot = len(pdfs_low) + len(pdfs_high) + len(pdfs_med)
@@ -590,7 +626,7 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0):
 def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0):
     ''' Maximum likelihood iteration '''
 
-    def get_like_nosys_sk4(ncce, nnc, nmupi):
+    def get_like_init_sk4(ncce, nnc, nmupi):
         '''Likelihood without systematics.
         Only used for initialization of background numbers.
         '''
@@ -606,6 +642,26 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0):
             return -1e10
         nevents = array([ncce, nccmu] + [nnc, nmupi] + [nrelic])
         totlike = log((nevents * pdfs_med).sum(axis = 1)).sum() - nevents.sum()
+        return totlike
+
+    def get_like_nosys_sk4(nbackgrounds):
+        ''' Likelihood with systematics '''
+        assert len(pdfs) == len(pdfs_1n) == 3
+
+        pdfs_dist_low, pdfs_dist_med, pdfs_dist_high = [clip(p, 1e-10, None) for p in pdfs]
+        pdfs_dist_low_1n, pdfs_dist_med_1n, pdfs_dist_high_1n = [clip(p, 1e-10, None) for p in pdfs_1n]
+
+        if nbackgrounds.min() < 0:
+            return -1e10
+        nevents = array(list(nbackgrounds) + [nrelic])
+
+        totlike = (log(einsum("j,ij", nevents, pdfs_dist_high)).sum(axis=0)
+                   + log(einsum("j,ij", nevents, pdfs_dist_med)).sum(axis=0)
+                   + log(einsum("j,ij", nevents, pdfs_dist_low)).sum(axis=0)
+                   + log(einsum("j,ij", nevents, pdfs_dist_high_1n)).sum(axis=0)
+                   + log(einsum("j,ij", nevents, pdfs_dist_med_1n)).sum(axis=0)
+                   + log(einsum("j,ij", nevents, pdfs_dist_low_1n)).sum(axis=0)
+                   - nrelic - nbackgrounds.sum())
         return totlike
 
     def get_like_sk4(nbackgrounds):
@@ -639,14 +695,51 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0):
                     * wgauss3[newaxis, newaxis, :]).sum()) + totmax
         return likenew
 
-    if sys:
+    def get_like_esys_sk4(nbackgrounds):
+        ''' Likelihood with systematics '''
+        assert len(pdfs) == len(pdfs_1n) == 3
+
+        pdfs_dist_low, pdfs_dist_med, pdfs_dist_high = [clip(p, 1e-10, None) for p in pdfs]
+        pdfs_dist_low_1n, pdfs_dist_med_1n, pdfs_dist_high_1n = [clip(p, 1e-10, None) for p in pdfs_1n]
+
+        if nbackgrounds.min() < 0:
+            return -1e10
+        nevents = array(list(nbackgrounds) + [nrelic])
+        # testing = pdfs_dist_high
+        # if sum(testing <= 0.0) > 0:
+        #     raise ValueError("nonpositivity of distorted pdf")
+
+        totlike = (log(einsum("j,ijk", nevents, pdfs_dist_high)).sum(axis=0)
+                   + log(einsum("j,ijk", nevents, pdfs_dist_med)).sum(axis=0)
+                   + log(einsum("j,ijk", nevents, pdfs_dist_low)).sum(axis=0)
+                   + log(einsum("j,ijk", nevents, pdfs_dist_high_1n)).sum(axis=0)
+                   + log(einsum("j,ijk", nevents, pdfs_dist_med_1n)).sum(axis=0)
+                   + log(einsum("j,ijk", nevents, pdfs_dist_low_1n)).sum(axis=0)
+                   - nrelic - nbackgrounds.sum())
+        totmax = totlike.max()
+        gauss = exp(-arange(-4,4.5,0.5)**2/2)
+        gauss /= gauss.sum()
+        likenew = log(exp(totlike - totmax) * gauss).sum() + totmax
+        return likenew
+
+    if sys == 2:
+        def funclike(nback):
+            return -get_like_esys_sk4(nback)
+        maxlike = fmin(funclike, nback_ini, full_output=True, disp=0)
+        return append(maxlike[0], array([nrelic, -maxlike[1]]))
+    if sys == 1:
         def funclike(nback):
             return -get_like_sk4(nback)
         maxlike = fmin(funclike, nback_ini, full_output=True, disp=0)
         return append(maxlike[0], array([nrelic, -maxlike[1]]))
-    else:
+    if sys == 0:
         def funclike(nback):
-            return -get_like_nosys_sk4(nback, nback_ini[1], nback_ini[2])
+            return -get_like_nosys_sk4(nback)
+        maxlike = fmin(funclike, nback_ini, full_output=True, disp=0)
+        return append(maxlike[0], array([nrelic, -maxlike[1]]))
+    if sys == -1:
+        def funclike(nback):
+            return -get_like_init_sk4(nback, nback_ini[1], nback_ini[2])
         maxlike = fmin(funclike, nback_ini[0], full_output=True, disp=0)
         ntot = sum([len(p) for p in pdfs])
         ntot += sum([len(p) for p in pdfs_1n])
@@ -662,6 +755,8 @@ def analyse(likes, final=False):
     fact = 0.5 if final else 1
     rel = likes[:, -2] * fact
     best = rel[bestpos]
+    print(lmax)
+    print((likes[:, -1] - lmax).dtype)
     norm = exp(likes[:, -1] - lmax).sum()
     errminus = best - rel[searchsorted(likes[:bestpos, -1], lmax - 0.5)]
     errplus = rel[len(likes) - 1 - searchsorted(likes[bestpos:, -1][::-1], lmax - 0.5)] - best
@@ -803,7 +898,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         nc = (nevhigh - mupi_rescale_high[sknum - 1] * mupi) * nc_rescale[sknum - 1]
 
         # Maximize likelihoods over backgrounds in signal region
-        likemax = getmaxlike(rel, array([nback/5.,nc,mupi]), low, med, high, sknum)
+        likemax = getmaxlike(rel, array([nback/5.,nc,mupi]), low, med, high, sknum, sys=-1)
         return likemax
 
     def initialize_sk4(low, med, high, low_1n, med_1n, high_1n, rel):
@@ -820,7 +915,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
 
         # Maximize likelihoods over backgrounds in signal region
         likemax = getmaxlike_sk4(rel, array([nback/5.,nc,mupi]), [low, med, high],
-                                [low_1n, med_1n, high_1n])
+                                [low_1n, med_1n, high_1n], sys=-1)
         return likemax
 
     def applysys(likes, eff, rmin, rmax, rstep):
@@ -901,14 +996,19 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
             if systematics == 1:
                 sysmatrices = systematics_atm([sampmed, samphigh], sknum, model,
                                            elow, ehigh, backgrounds=bgs_sk4)
+                # Distort pdfs: (Nen x Npdfs x Nsigma x Nsigma2 x Nsigma3)
+                sysmatrix_med, sysmatrix_high = sysmatrices[:3]
+                pdfs_high = pdfs_high[...,newaxis,newaxis] * sysmatrix_high
+                pdfs_med = pdfs_med[...,newaxis,newaxis] * sysmatrix_med
             if systematics == 2:
                 sysmatrices = systematics_escale_res([samplow, sampmed, samphigh], sknum, model,
-                                           elow, ehigh, backgrounds=bgs_sk4)
+                                           elow, ehigh, backgrounds=bgs_sk4, signal = signal)
                 sysmatrix_low, sysmatrix_med, sysmatrix_high = sysmatrices[:3]
-            # Distort pdfs: (Nen x Npdfs x Nsigma x Nsigma2 x Nsigma3)
-            pdfs_low = pdfs_low if not sysmatrix_low else pdfs_low[...,newaxis,newaxis] * sysmatrix_low
-            pdfs_high = pdfs_high[...,newaxis,newaxis] * sysmatrix_high
-            pdfs_med = pdfs_med[...,newaxis,newaxis] * sysmatrix_med
+                # Distort pdfs: (Nen x Npdfs x Nsigma)
+                print("Haha ", pdfs_med[0,2], sysmatrix_med[0,2,0])
+                pdfs_low = pdfs_low[...,newaxis] * sysmatrix_low
+                pdfs_high = pdfs_high[...,newaxis] * sysmatrix_high
+                pdfs_med = pdfs_med[...,newaxis] * sysmatrix_med
 
         # Main maximization loop
         likedata = []
@@ -937,6 +1037,9 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                               pdfs_low_n, pdfs_med_n, pdfs_high_n, rmin)
         nue, numu, nc, mupi, _, _ = init
 
+        if sum(pdfs_high <= 0.0) > 0:
+            raise ValueError("zeros in pdf")
+
         # Get systematic error matrices
         if systematics:
             sysmatrices = None
@@ -945,24 +1048,29 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                                         model, elow, ehigh, elow_1n=elow_1n,
                                         backgrounds=bgs_sk4,
                                         energies_n=[samplow_n, sampmed_n, samphigh_n])
+                sysmatrix_low, sysmatrix_med, sysmatrix_high = sysmatrices[:3]
+                sysmatrix_low_1n, sysmatrix_med_1n, sysmatrix_high_1n = sysmatrices[3:]
+                # Distort pdfs
+                pdfs_high = pdfs_high[...,newaxis,newaxis,newaxis] * sysmatrix_high
+                pdfs_med = pdfs_med[...,newaxis,newaxis,newaxis] * sysmatrix_med
+                pdfs_low = pdfs_low[...,newaxis,newaxis,newaxis] * sysmatrix_low
+                pdfs_high_1n = pdfs_high_n[...,newaxis,newaxis,newaxis] * sysmatrix_high_1n
+                pdfs_med_1n = pdfs_med_n[...,newaxis,newaxis,newaxis] * sysmatrix_med_1n
+                pdfs_low_1n = pdfs_low_n[...,newaxis,newaxis,newaxis] * sysmatrix_low_1n
             if systematics == 2:
                 sysmatrices = systematics_escale_res([samplow, sampmed, samphigh], sknum,
                                         model, elow, ehigh, elow_1n=elow_1n,
-                                        backgrounds=bgs_sk4,
+                                        backgrounds=bgs_sk4, signal = signal,
                                         energies_n=[samplow_n, sampmed_n, samphigh_n])
-            sysmatrix_low, sysmatrix_med, sysmatrix_high = sysmatrices[:3]
-            sysmatrix_low_1n, sysmatrix_med_1n, sysmatrix_high_1n = sysmatrices[3:]
-
-            if sum(pdfs_high <= 0.0) > 0:
-                raise ValueError("zeros in pdf")
-
-            # Distort pdfs
-            pdfs_high = pdfs_high[...,newaxis,newaxis,newaxis] * sysmatrix_high
-            pdfs_med = pdfs_med[...,newaxis,newaxis,newaxis] * sysmatrix_med
-            pdfs_low = pdfs_low[...,newaxis,newaxis,newaxis] * sysmatrix_low
-            pdfs_high_1n = pdfs_high_n[...,newaxis,newaxis,newaxis] * sysmatrix_high_1n
-            pdfs_med_1n = pdfs_med_n[...,newaxis,newaxis,newaxis] * sysmatrix_med_1n
-            pdfs_low_1n = pdfs_low_n[...,newaxis,newaxis,newaxis] * sysmatrix_low_1n
+                sysmatrix_low, sysmatrix_med, sysmatrix_high = sysmatrices[:3]
+                sysmatrix_low_1n, sysmatrix_med_1n, sysmatrix_high_1n = sysmatrices[3:]
+                # Distort pdfs
+                pdfs_high = pdfs_high[...,newaxis,newaxis] * sysmatrix_high
+                pdfs_med = pdfs_med[...,newaxis,newaxis] * sysmatrix_med
+                pdfs_low = pdfs_low[...,newaxis,newaxis] * sysmatrix_low
+                pdfs_high_1n = pdfs_high_n[...,newaxis,newaxis] * sysmatrix_high_1n
+                pdfs_med_1n = pdfs_med_n[...,newaxis,newaxis] * sysmatrix_med_1n
+                pdfs_low_1n = pdfs_low_n[...,newaxis,newaxis] * sysmatrix_low_1n
 
         # Main maximization loop
         likedata = []
@@ -971,7 +1079,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
             likeres = getmaxlike_sk4(rel, array([nue, numu, nc, mupi]),
                             [pdfs_low, pdfs_med, pdfs_high],
                             [pdfs_low_1n, pdfs_med_1n, pdfs_high_1n],
-                            sys=1)
+                            sys=systematics)
             likedata.append(likeres)
             # Update initial values
             [nue, numu, nc, mupi] = list(likedata[-1][:4])
