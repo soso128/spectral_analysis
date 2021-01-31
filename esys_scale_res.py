@@ -79,13 +79,18 @@ def esys_mupi_high(e,sknum):
 
 def esys(e,sknum,region,sigbkg):
     if region == 0:
+        if sigbkg == 0: return esys_nue(e,sknum)
+        if sigbkg == 2: return esys_ncel_high(e,sknum)
         if sigbkg == 3: return esys_mupi_low(e,sknum)
+        if sigbkg == 4: return esys_rel(e,sknum)
     elif region == 1:
         if sigbkg == 0: return esys_nue(e,sknum)
         elif sigbkg == 2: return esys_ncel_med(e,sknum)
         elif sigbkg == 3: return esys_mupi_med(e,sknum)
         if sigbkg == 4: return esys_rel(e,sknum)
     elif region == 2:
+        if sigbkg == 0: return esys_nue(e,sknum)
         if sigbkg == 2: return esys_ncel_high(e,sknum)
         elif sigbkg == 3: return esys_mupi_high(e,sknum)
+        if sigbkg == 4: return esys_rel(e,sknum)
     return 0
