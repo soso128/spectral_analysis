@@ -77,8 +77,8 @@ soleff = [soleff_sk1, soleff_sk2, soleff_sk3, soleff_sk4]
 ntag_ebins = [16, 90]
 bdt_cuts = [0.620]
 emin, emax = ntag_ebins[0], ntag_ebins[-1]
-# bdt_roc = genfromtxt('roc_curve_N10gt5_cut6_nlow1_newsys.roc')
-bdt_roc = genfromtxt('/disk02/usr6/elhedri/relic_sk4_ana/cut_optimization/spec_ntag_optimization/roc_curve/roc_curve_N10gt5_cut6_nlow1_newsys_fakedata.roc')
+bdt_roc = genfromtxt('../../roc_curve_N10gt5_cut6_nlow1_newsys_fakedata.roc')
+#bdt_roc = genfromtxt('/disk02/usr6/elhedri/relic_sk4_ana/cut_optimization/spec_ntag_optimization/roc_curve/roc_curve_N10gt5_cut6_nlow1_newsys_fakedata.roc')
 cuts_roc, roc_effs, roc_bg = bdt_roc[:,0], bdt_roc[:,1], bdt_roc[:,2]
 ntag_eff = interp1d(cuts_roc, roc_effs)
 ntag_bg = interp1d(cuts_roc, roc_bg)
@@ -374,6 +374,92 @@ def systematics_escale_res(energies, sknum, model, elow, ehigh, elow_1n=None,
     sysm_1n = sysmatrix_low_1n, sysmatrix_med_1n, sysmatrix_high_1n
     return sysm + sysm_1n
 
+def systematics_mupi(energies, sknum, model, elow, ehigh, elow_1n=None,
+                    energies_n=None, backgrounds=None):
+    '''
+    Compute distortion functions due to systematics (for atmospheric spectra)
+    Must provide energies=[energies_mid, energies_hi] arrays if sk1/2/3.
+    If sk4, energies=[lo, mid, hi], and energies_n=[lo_n, mid_n, hi_n]
+    for (0 | >1) neutron region and 1 neutron region respectively.
+    '''
+
+    def pdfnorm(pdf_id, region_id, ntag=None):
+        ''' Calculate PDF norm for given region.
+        sk4: if None is given as region, sum over regions
+        '''
+        def pdf_en(region_id, ntag=None):
+            ''' PDF function depending only on energy '''
+            return lambda en: pdf(en, sknum, model, elow, pdf_id,
+                                  region_id, ntag, backgrounds)
+
+        if sknum == 4:
+            if region_id is not None and ntag is not None:
+                if ntag:
+                    return quad(pdf_en(region_id, ntag), elow_1n, ehigh)[0]
+                else:
+                    return quad(pdf_en(region_id, ntag), elow, ehigh)[0]
+            elif region_id is not None:
+                norm = quad(pdf_en(region_id, False), elow, ehigh)[0]
+                norm += quad(pdf_en(region_id, True), elow_1n, ehigh)[0]
+                return norm
+            elif ntag is not None:
+                if ntag:
+                    norm = [quad(pdf_en(rid, ntag), elow_1n, ehigh)[0]
+                            for rid in range(len(regionid))]
+                else:
+                    norm = [quad(pdf_en(rid, ntag), elow, ehigh)[0]
+                            for rid in range(len(regionid))]
+                return sum(norm)
+            else:
+                norm_1n = [quad(pdf_en(rid, True), elow_1n, ehigh)[0]
+                           for rid in range(len(regionid))]
+                norm_other = [quad(pdf_en(rid, False), elow, ehigh)[0]
+                              for rid in range(len(regionid))]
+                return sum(norm_1n) + sum(norm_other)
+        else:
+            return quad(pdf_en(region_id), elow, ehigh)[0]
+
+    def pdfmoment(pdf_id, region_id):
+        ''' First moment of PDF for given Cherenkov region '''
+        def integrand(ntag=None):
+            return lambda en: en * pdf(en, sknum, model, elow, pdf_id,
+                                        region_id, ntag, backgrounds)
+        if sknum < 4:
+            return quad(integrand(), elow, ehigh)[0]
+        else:
+            moment = quad(integrand(ntag=True), elow_1n, ehigh)[0]
+            moment += quad(integrand(ntag=False), elow, ehigh)[0]
+            return moment
+
+    # CC distortion sigmas
+    sigmas = arange(-1, 3.5, 0.5)
+    assert energies_n is not None
+    assert len(energies) == len(energies_n) == 3
+    energies_low, energies_med, energies_high = energies
+    energies_low_n, energies_med_n, energies_high_n = energies_n
+
+    # Normalization and correction factors for mupi
+    norm0 = pdfnorm(pdfid["mupi"], regionid["low"])
+    norm1 = pdfmoment(pdfid["mupi"], regionid["low"])
+    normmupi = 1. / (1 + 0.5 * sigmas * cc_mult * (80 - norm1 / norm0) / 60)
+    mupifact = 1 + 0.5*sigmas[newaxis,:] * cc_mult * (80 - energies_low[:,newaxis])/60
+    mupifact *= normmupi # (Nenergies x Nsigmas)
+    mupifact_1n = 1 + 0.5 * sigmas[newaxis,:] * cc_mult * (80 - energies_low_n[:,newaxis])/60
+    mupifact_1n *= normmupi
+
+    # make systematics tensors (Nen x Npdfs x Nsig)
+    sys_shape_low = (len(energies_low), len(pdfid), len(sigmas))
+    sys_shape_low_1n = (len(energies_low_n),) + sys_shape_low[1:]
+
+    sysmatrix_low = ones(sys_shape_low)
+    sysmatrix_low_1n = ones(sys_shape_low_1n)
+
+    sysmatrix_low[:, pdfid["mupi"], :] = mupifact
+
+    sysmatrix_low_1n[:, pdfid["mupi"], :] = mupifact_1n
+
+    return sysmatrix_low,sysmatrix_low_1n
+
 def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
                     energies_n=None, backgrounds=None):
     '''
@@ -603,7 +689,7 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0):
         totmax = totlike.max()
         gauss = exp(-arange(-4,4.5,0.5)**2/2)
         gauss /= gauss.sum()
-        likenew = log((exp(totlike - totmax)).sum()) + totmax
+        likenew = log((exp(totlike - totmax) * gauss).sum()) + totmax
         return likenew
 
     funclike = None
@@ -701,6 +787,26 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0):
                     * wgauss3[newaxis, newaxis, :]).sum()) + totmax
         return likenew
 
+    def get_like_mupi_sk4(nbackgrounds):
+        ''' Likelihood with systematics on atm spectral shapes'''
+        assert len(pdfs) == len(pdfs_1n) == 3
+        pdfs_low, pdfs_med, pdfs_high = [clip(p, 1e-10, None) for p in pdfs]
+        pdfs_low_1n, pdfs_med_1n, pdfs_high_1n = [clip(p, 1e-10, None) for p in pdfs_1n]
+        if nbackgrounds.min() < 0:
+            return -1e10
+        wgauss = asym_gaussian()
+        nevents = array(list(nbackgrounds) + [nrelic])
+        totlike = (log(einsum("j,ijk", nevents, pdfs_low)).sum(axis = 0)
+                   + log(einsum("j,ijk", nevents, pdfs_low_1n)).sum(axis = 0)
+                   + log(dot(nevents,pdfs_med.T)).sum(axis = 0)
+                   + log(dot(nevents,pdfs_med_1n.T)).sum(axis = 0)
+                   + log(dot(nevents,pdfs_high.T)).sum(axis = 0)
+                   + log(dot(nevents,pdfs_high_1n.T)).sum(axis = 0)
+                   - nrelic - nbackgrounds.sum()) # maybe double counting?
+        totmax = totlike.max()
+        likenew = log((exp(totlike - totmax) * wgauss).sum()) + totmax
+        return likenew
+
     def get_like_esys_sk4(nbackgrounds):
         ''' Likelihood with systematics '''
         assert len(pdfs) == len(pdfs_1n) == 3
@@ -728,6 +834,11 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0):
         likenew = log(exp(totlike - totmax) * gauss).sum() + totmax
         return likenew
 
+    if sys == 3:
+        def funclike(nback):
+            return -get_like_mupi_sk4(nback)
+        maxlike = fmin(funclike, nback_ini, full_output=True, disp=0)
+        return append(maxlike[0], array([nrelic, -maxlike[1]]))
     if sys == 2:
         def funclike(nback):
             return -get_like_esys_sk4(nback)
@@ -1075,6 +1186,15 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                 pdfs_low = pdfs_low[...,newaxis] * sysmatrix_low
                 pdfs_high_n = pdfs_high_n[...,newaxis] * sysmatrix_high_1n
                 pdfs_med_n = pdfs_med_n[...,newaxis] * sysmatrix_med_1n
+                pdfs_low_n = pdfs_low_n[...,newaxis] * sysmatrix_low_1n
+            if systematics == 3:
+                sysmatrices = systematics_mupi([samplow, sampmed, samphigh], sknum,
+                                        model, elow, ehigh, elow_1n=elow_1n,
+                                        backgrounds=bgs_sk4,
+                                        energies_n=[samplow_n, sampmed_n, samphigh_n])
+                sysmatrix_low, sysmatrix_low_1n = sysmatrices
+                # Distort pdfs
+                pdfs_low = pdfs_low[...,newaxis] * sysmatrix_low
                 pdfs_low_n = pdfs_low_n[...,newaxis] * sysmatrix_low_1n
 
         # Main maximization loop
