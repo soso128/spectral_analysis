@@ -2,7 +2,7 @@
 Wrapper classes for relic and SK-IV backgrounds.
 '''
 from pickle import load as loadpick
-from numpy import digitize, array
+from numpy import digitize, array, ones
 from scipy import interpolate
 from scipy.integrate import quad
 
@@ -13,8 +13,8 @@ class bg_sk4:
     nc.pdf(energy, region)
     '''
     def __init__(self, ev_type, cut_bins, cut_effs, cut_bins_n, cut_effs_n,
-                 pdf_dir, elow, elow_n=None, ehigh=90.0):
-        ''' 0 < ev_type < 3 for nue, numu, nc, or mupi background.
+                 pdf_dir, elow, elow_n=None, ehigh=90.0, ntag_scale=None):
+        ''' 0 <= ev_type <= 3 for nue, numu, nc, or mupi background.
         cut_bins should be a list of N energy bin edges.
         cut_effs should be a list of N-1 cut efficiencies.
         '''
@@ -34,6 +34,10 @@ class bg_sk4:
         self.ev_type = ev_type
         self.pdf_dir = pdf_dir
 
+        if ntag_scale is None:
+            self.ntag_scale = ones(2)
+        else:
+            self.ntag_scale = ntag_scale[ev_type]
         self.params = self._load_param_array(self.ev_type)
         self.norm0 = self._get_norm0() # Normalization of source pdf to 1
         self.norm = self._get_norm() # Normalization after cuts to 1
@@ -104,7 +108,7 @@ class bg_sk4:
                         e_hi = self.ehigh
                     a0, _ = quad(self.pdf_before_cuts, e_lo,
                                  e_hi, args=(region, ntag))
-                    area += a0 * cut_eff
+                    area += a0 * cut_eff * self.ntag_scale[ntag]
         return 1.0 / area
 
     def pdf(self, energy, region, ntag):
@@ -120,7 +124,7 @@ class bg_sk4:
 
         cut_eff = self.cut_effs[ntag][ebin-1]
         p0 = self.pdf_before_cuts(energy, region, ntag)
-        return self.norm * cut_eff * p0
+        return self.norm * cut_eff * p0 * self.ntag_scale[int(ntag)]
 
 class relic_sk:
     '''
