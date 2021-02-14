@@ -80,7 +80,7 @@ ntag_ebins = [16, 90]
 bdt_cuts = [0.620]
 emin, emax = ntag_ebins[0], ntag_ebins[-1]
 # bdt_roc = genfromtxt('roc_curve_N10gt5_cut6_nlow1_newsys.roc')
-bdt_roc = genfromtxt('/disk02/usr6/elhedri/relic_sk4_ana/cut_optimization/spec_ntag_optimization/roc_curve/roc_curve_N10gt5_cut6_nlow1_newsys_fakedata.roc')
+bdt_roc = genfromtxt('ROCs/roc_curve_N10gt5_cut6_nlow1_newsys_fakedata.roc')
 cuts_roc, roc_effs, roc_bg = bdt_roc[:,0], bdt_roc[:,1], bdt_roc[:,2]
 ntag_eff = interp1d(cuts_roc, roc_effs)
 ntag_bg = interp1d(cuts_roc, roc_bg)
@@ -205,7 +205,6 @@ def skgd_params(concentration):
         gd_cap_frac = 0.9
     else:
         raise ValueError("Gd concentration must be 0.01 or 0.1")
-    gd_cap_frac = 0.9 # 0.5 for 0.01%Gd, 0.9 for 0.1%Gd
     gd_livetime = 10 * 365.25
     atm_eff = 1.0 #0.4
     h2o_eff_ps_all = 0.562 # Pure water presel. efficiency before time window
@@ -219,30 +218,26 @@ def skgd_params(concentration):
     gdmix_eff_gd = gd_cap_frac * gd_scale * gd_eff_ps_all
     gdmix_eff_ps = gdmix_eff_h2o + gdmix_eff_gd
     # Neutron tagging BDT SK-Gd efficiencies
-    bdt_roc_gd = genfromtxt('/disk02/usr6/giampaol/ntag-mva/models/bdt22_n6_puregd_gamma/roc_test.csv', delimiter=', ')
-    bdt_roc_gd001 = genfromtxt('/disk02/usr6/giampaol/ntag-mva/models/bdt22_n6_gdmix_gamma/roc_test.csv', delimiter=', ')
+    bdt_roc_gd = genfromtxt('ROCs/bdt22_n6_skgd_1.roc', delimiter=', ')
+    bdt_roc_gd001 = genfromtxt('ROCs/bdt22_n6_skgd_001.roc', delimiter=', ')
     # Pure Gd BDT
     cuts_roc_gd, roc_effs_gd, roc_bg_gd = bdt_roc_gd[:,0], bdt_roc_gd[:,1], bdt_roc_gd[:,2]
     cut_from_bg_gd = interp1d(roc_bg_gd, cuts_roc_gd)
-    effgd, bggd = interp1d(cuts_roc_gd, roc_effs_gd), interp1d(cuts_roc_gd, roc_bg_gd)
+    effgd = interp1d(cuts_roc_gd, roc_effs_gd)
     bdt_cuts_gd = cut_from_bg_gd(ntag_bgs)
-    ntag_effs_gd, ntag_bg_gd = effgd(bdt_cuts_gd), bggd(bdt_cuts_gd)
+    ntag_effs_gd = effgd(bdt_cuts_gd)
     # 0.01% Gd BDT
     cuts_roc_gd001, roc_effs_gd001, roc_bg_gd001 = bdt_roc_gd001[:,0], bdt_roc_gd001[:,1], bdt_roc_gd001[:,2]
     cut_from_bg_gd001 = interp1d(roc_bg_gd001, cuts_roc_gd001)
-    eff001, bg001 = interp1d(cuts_roc_gd001, roc_effs_gd001), interp1d(cuts_roc_gd001, roc_bg_gd001)
+    eff001 = interp1d(cuts_roc_gd001, roc_effs_gd001)
     bdt_cuts_gd001 = cut_from_bg_gd001(ntag_bgs)
-    ntag_effs_gd001, ntag_bg_gd001 = eff001(bdt_cuts_gd001), bg001(bdt_cuts_gd001)
+    ntag_effs_gd001 = eff001(bdt_cuts_gd001)
     if gd_cap_frac == 0.5: # 0.01% Gd
         ntag_effs_gd = ntag_effs_gd001
     elif gd_cap_frac == 0.9:
         ntag_effs_gd = ntag_effs_gd * 0.9
     else:
         raise ValueError("Ncap fraction must be either 0.5 or 0.9")
-    # if skgd_ntag:
-    #     ntag_eff_ps = gdmix_eff_ps
-    #     ntag_effs = ntag_effs_gd
-    #     livetimes[3] = gd_livetime
 
     # Update global variables
     global ntag_eff_ps, ntag_effs
@@ -283,11 +278,11 @@ def spasol_ntag_weight(spasol_bins, spasol_effs,
         else:  # 0 or multiple neutrons region
             return 1 - weight_1n
 
-    with open("/disk02/usr6/giampaol/spectral/toys/energies_ntag.p", "rb") as fl:
+    with open("atm_mc_info/energies_ntag.p", "rb") as fl:
         E_mupi, E_NC, E_CC_nue, E_decaye_mc, E_decaye = pickle.load(fl)
-    with open("/disk02/usr6/giampaol/spectral/toys/wgt_ntag.p", "rb") as fl:
+    with open("atm_mc_info/wgt_ntag.p", "rb") as fl:
         wgt_mupi, wgt_NC, wgt_CC_nue, wgt_decaye_mc = pickle.load(fl)
-    with open("/disk02/usr6/giampaol/spectral/toys/ncaps_ntag.p", "rb") as fl:
+    with open("atm_mc_info/ncaps_ntag.p", "rb") as fl:
         n_mupi, n_NC, n_CC_nue, n_decaye_mc = pickle.load(fl)
     enes_arr = [E_CC_nue, E_decaye_mc, E_NC, E_mupi, E_decaye]
     wgts_arr = [wgt_CC_nue, wgt_decaye_mc, wgt_NC, wgt_mupi]
