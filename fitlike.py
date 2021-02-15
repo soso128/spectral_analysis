@@ -1,7 +1,9 @@
 ''' Spectral fits for SRN analysis of SK I-IV '''
 from __future__ import division
-from sys import path, argv
+from sys import path
 from ast import literal_eval
+import argparse
+import pickle
 
 from numpy import *
 from scipy.interpolate import interp1d
@@ -78,7 +80,6 @@ ntag_ebins = [16, 90]
 bdt_cuts = [0.620]
 emin, emax = ntag_ebins[0], ntag_ebins[-1]
 bdt_roc = genfromtxt('../../roc_curve_N10gt5_cut6_nlow1_newsys_fakedata.roc')
-#bdt_roc = genfromtxt('/disk02/usr6/elhedri/relic_sk4_ana/cut_optimization/spec_ntag_optimization/roc_curve/roc_curve_N10gt5_cut6_nlow1_newsys_fakedata.roc')
 cuts_roc, roc_effs, roc_bg = bdt_roc[:,0], bdt_roc[:,1], bdt_roc[:,2]
 ntag_eff = interp1d(cuts_roc, roc_effs)
 ntag_bg = interp1d(cuts_roc, roc_bg)
@@ -172,9 +173,6 @@ def load_signal_pdf(sknum, model, elow, ehigh, elow_1n):
 
 
     print(f"Load model {model}")
-    # elow_spec = elow
-    # if sknum == 4:
-    #     elow_spec = min(elow, elow_1n)
     if ":" not in model:
         # These are discrete models
         flux = loadtxt(f"models/flux_cross_{model}.dat")  # Enu, flux
@@ -190,22 +188,139 @@ def load_signal_pdf(sknum, model, elow, ehigh, elow_1n):
         totflux, _ = quad(sns.snflux, 17.3, 100, args=(mod, imf, csfr))
         en, spec_full = spec_params(mod, imf, csfr, 0, 100)
     rel = relic(en, spec_full)
-    # if sknum == 2:  # TODO
-    #     totrate = tot_rate(en, spec_full, 16, 90)
-    # else:
     totrate = tot_rate(en, spec_full, 16, 90)
-    # totrate = tot_rate(en, spec_full, elow, ehigh)
-    # if sknum == 4 and elow != elow_1n:
-    #     if elow_1n < elow:
-    #         totrate_low = tot_rate(en, spec_full, elow_1n, elow,
-    #                                ntag=True, nfracs=rel.nregions_frac)
-    #     else:
-    #         totrate_low = tot_rate(en, spec_full, elow, elow_1n,
-    #                                ntag=False, nfracs=rel.nregions_frac)
-    #         totrate = tot_rate(en, spec_full, elow_1n, ehigh)
-    #     totrate = totrate + totrate_low
     flux_fac = totflux / totrate
     return rel, flux_fac, totrate, totflux
+
+
+def skgd_params(concentration):
+    """ Update fit parameters for fitting against SK-Gd projection
+    Concentration can be 0.1 or 0.01 (%) """
+    # SK-Gd ntag parameters
+    skgd_ntag = False # Turn on for SK-Gd ntag efficiency
+    if concentration == 0.01:
+        gd_cap_frac = 0.5
+    elif concentration == 0.1:
+        gd_cap_frac = 0.9
+    else:
+        raise ValueError("Gd concentration must be 0.01 or 0.1")
+    gd_livetime = 10 * 365.25
+    atm_eff = 1.0 #0.4
+    h2o_eff_ps_all = 0.562 # Pure water presel. efficiency before time window
+    gd_eff_ps_all = 0.995 # Pure Gd presel. efficiency before time window
+    n_tau = 204.8  # neutron capture characteristic time, microsecs
+    n_tau_gd = 35.  # Gd ncap time
+    srn_lo, srn_hi = 2., 535. # SK-Gd SRN analysis time window
+    h2o_scale = exp(-srn_lo / n_tau) - exp(-srn_hi / n_tau)
+    gd_scale = exp(-srn_lo / n_tau_gd) - exp(-srn_hi  /  n_tau_gd)
+    gdmix_eff_h2o = (1 - gd_cap_frac) * h2o_scale * h2o_eff_ps_all
+    gdmix_eff_gd = gd_cap_frac * gd_scale * gd_eff_ps_all
+    gdmix_eff_ps = gdmix_eff_h2o + gdmix_eff_gd
+    # Neutron tagging BDT SK-Gd efficiencies
+    bdt_roc_gd = genfromtxt('ROCs/bdt22_n6_skgd_1.roc', delimiter=', ')
+    bdt_roc_gd001 = genfromtxt('ROCs/bdt22_n6_skgd_001.roc', delimiter=', ')
+    # Pure Gd BDT
+    cuts_roc_gd, roc_effs_gd, roc_bg_gd = bdt_roc_gd[:,0], bdt_roc_gd[:,1], bdt_roc_gd[:,2]
+    cut_from_bg_gd = interp1d(roc_bg_gd, cuts_roc_gd)
+    effgd = interp1d(cuts_roc_gd, roc_effs_gd)
+    bdt_cuts_gd = cut_from_bg_gd(ntag_bgs)
+    ntag_effs_gd = effgd(bdt_cuts_gd)
+    # 0.01% Gd BDT
+    cuts_roc_gd001, roc_effs_gd001, roc_bg_gd001 = bdt_roc_gd001[:,0], bdt_roc_gd001[:,1], bdt_roc_gd001[:,2]
+    cut_from_bg_gd001 = interp1d(roc_bg_gd001, cuts_roc_gd001)
+    eff001 = interp1d(cuts_roc_gd001, roc_effs_gd001)
+    bdt_cuts_gd001 = cut_from_bg_gd001(ntag_bgs)
+    ntag_effs_gd001 = eff001(bdt_cuts_gd001)
+    if gd_cap_frac == 0.5: # 0.01% Gd
+        ntag_effs_gd = ntag_effs_gd001
+    elif gd_cap_frac == 0.9:
+        ntag_effs_gd = ntag_effs_gd * 0.9
+    else:
+        raise ValueError("Ncap fraction must be either 0.5 or 0.9")
+
+    # Update global variables
+    global ntag_eff_ps, ntag_effs
+    ntag_eff_ps = gdmix_eff_ps
+    ntag_effs = ntag_effs_gd
+    livetimes[3] = gd_livetime
+    print(f"Using Gd concentration of {concentration}%")
+    print(f"with ntag efficiencies of {ntag_effs*ntag_eff_ps}")
+
+
+def spasol_ntag_weight(spasol_bins, spasol_effs,
+                       ntag_bins, ntag_effs,
+                       ntag_bgs, ntag_bg_ps, elow, elow_1n, ehigh):
+    " Pdf rescalings for SK-Gd ntag efficiency "
+
+    def empty(n): return [[] for _ in range(n)]
+    def ar_sum(ar):
+        tot = 0
+        try: tot += sum([ar_sum(a) for a in ar])
+        except TypeError: tot += ar
+        return tot
+
+    def ntag_weight(E, ncap, ntag=True, gd=True):
+        ebin = digitize(E, ntag_bins)
+        ef = ntag_effs[ebin-1]
+        bgrate = ntag_bgs[ebin-1]
+
+        # Probability of tagging exactly 1 true neutron
+        prob_1n = ncap * ef * (1 - ef)**(ncap - 1)
+        # Probability of mistagging exactly 1 accidental
+        prob_1b = ntag_bg_ps * bgrate * (1 - bgrate)**(ntag_bg_ps - 1)
+        prob_0n = (1 - ef)**(ncap)
+        prob_0b = (1 - bgrate)**(ntag_bg_ps)
+
+        weight_1n = prob_1n * prob_0b + prob_1b * prob_0n
+        if ntag:  # 1-neutron region
+            return weight_1n
+        else:  # 0 or multiple neutrons region
+            return 1 - weight_1n
+
+    with open("atm_mc_info/energies_ntag.p", "rb") as fl:
+        E_mupi, E_NC, E_CC_nue, E_decaye_mc, E_decaye = pickle.load(fl)
+    with open("atm_mc_info/wgt_ntag.p", "rb") as fl:
+        wgt_mupi, wgt_NC, wgt_CC_nue, wgt_decaye_mc = pickle.load(fl)
+    with open("atm_mc_info/ncaps_ntag.p", "rb") as fl:
+        n_mupi, n_NC, n_CC_nue, n_decaye_mc = pickle.load(fl)
+    enes_arr = [E_CC_nue, E_decaye_mc, E_NC, E_mupi, E_decaye]
+    wgts_arr = [wgt_CC_nue, wgt_decaye_mc, wgt_NC, wgt_mupi]
+    ncaps_arr = [n_CC_nue, n_decaye_mc, n_NC, n_mupi]
+
+    Wgts = [[empty(3), empty(3)] for _ in range(4)]
+    ntag_wgt_tot_rescaled = zeros((4, 2))
+    for bg_pdf in range(4):
+        for ntag_id, ntw in enumerate(wgts_arr[bg_pdf]):
+            for angle_id, weights in enumerate(ntw):
+                wt = array(weights)
+                en = array(enes_arr[bg_pdf][ntag_id][angle_id])
+                nc = array(ncaps_arr[bg_pdf][ntag_id][angle_id])
+
+                if ntag_id: cut = (en > elow_1n) & (en < ehigh)
+                else: cut = (en > elow) & (en < ehigh)
+                en = en[cut]
+                wt = wt[cut]
+                nc = nc[cut]
+
+                binid = digitize(en, spasol_bins[ntag_id])
+                spasol_eff = array(spasol_effs[ntag_id])[binid - 1]
+                wt *= spasol_eff
+                Wgts[bg_pdf][ntag_id][angle_id] = wt
+
+                nt0_wgt2 = [w*ntag_weight(e,n,False,True) for e,n,w in zip(en, nc, wt)]
+                nt1_wgt2 = [w*ntag_weight(e,n,True,True) for e,n,w in zip(en, nc, wt)]
+                ntag_wgt_tot_rescaled[bg_pdf, 0] += sum(nt0_wgt2)
+                ntag_wgt_tot_rescaled[bg_pdf, 1] += sum(nt1_wgt2)
+    ntag_scaling_atm = array([[ar_sum(b[0]), ar_sum(b[1])] for b in Wgts])
+    ntag_scaling_atm /= sum(array([[ar_sum(b[0]),ar_sum(b[1])] for b in Wgts]), axis=1, keepdims=True)
+    ntag_scaling2 = ntag_wgt_tot_rescaled / sum(ntag_wgt_tot_rescaled, axis=1, keepdims=True)
+    # ntag_scaling2_cut = ntag_scaling2.copy()
+    # ntag_scaling2_cut[:, 1] = ntag_scaling2[:, 1] * atm_eff
+    # ntag_scaling2_cut[:, 0] = 1.0 - ntag_scaling2[:, 1] * atm_eff
+    # ntag_scaling2 = ntag_scaling2_cut
+    ntag_rescaling = ntag_scaling2 / ntag_scaling_atm
+
+    return ntag_rescaling
 
 
 def pdf(energy, sknum, model, elow, pdfid, region,
@@ -943,7 +1058,8 @@ def plotfit(nnue, nnumu, nnc, nmupi, nrelic, model, sknum, elow, ehigh, elow_1n,
 
 
 def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
-            rstep=0.1, quiet=True, outdir='.', systematics = 1):
+            rstep=0.1, quiet=True, outdir='.', systematics = 1,
+            sk4toydir=None, skgd_conc=None):
     '''
     Main maximum likelihood function
     sknum = 1,2,3 (SK phase)
@@ -954,20 +1070,37 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
 
     def load_sample(ntag=False):
         ''' Data samples for SK I-IV '''
-        if ntag:
-            low = loadtxt("sk{}/ntag/samplelow.txt".format(int(sknum)))[:, 1]
-            med = loadtxt("sk{}/ntag/samplemed.txt".format(int(sknum)))[:, 1]
-            high = loadtxt("sk{}/ntag/samplehigh.txt".format(int(sknum)))[:, 1]
-            low = low[(low > elow_1n) & (low < ehigh)]
-            med = med[(med > elow_1n) & (med < ehigh)]
-            high = high[(high > elow_1n) & (high < ehigh)]
+        if sk4toydir is None:
+            if ntag:
+                low = loadtxt("sk{}/ntag/samplelow.txt".format(int(sknum)))[:, 1]
+                med = loadtxt("sk{}/ntag/samplemed.txt".format(int(sknum)))[:, 1]
+                high = loadtxt("sk{}/ntag/samplehigh.txt".format(int(sknum)))[:, 1]
+                low = low[(low > elow_1n) & (low < ehigh)]
+                med = med[(med > elow_1n) & (med < ehigh)]
+                high = high[(high > elow_1n) & (high < ehigh)]
+            else:
+                low = loadtxt("sk{}/samplelow.txt".format(int(sknum)))[:, 1]
+                med = loadtxt("sk{}/samplemed.txt".format(int(sknum)))[:, 1]
+                high = loadtxt("sk{}/samplehigh.txt".format(int(sknum)))[:, 1]
+                low = low[(low > elow) & (low < ehigh)]
+                med = med[(med > elow) & (med < ehigh)]
+                high = high[(high > elow) & (high < ehigh)]
         else:
-            low = loadtxt("sk{}/samplelow.txt".format(int(sknum)))[:, 1]
-            med = loadtxt("sk{}/samplemed.txt".format(int(sknum)))[:, 1]
-            high = loadtxt("sk{}/samplehigh.txt".format(int(sknum)))[:, 1]
-            low = low[(low > elow) & (low < ehigh)]
-            med = med[(med > elow) & (med < ehigh)]
-            high = high[(high > elow) & (high < ehigh)]
+            print(f"Loading toy data samples at {sk4toydir}")
+            if ntag:
+                low = loadtxt(f"{sk4toydir}/low_ntag.txt")
+                med = loadtxt(f"{sk4toydir}/med_ntag.txt")
+                high = loadtxt(f"{sk4toydir}/high_ntag.txt")
+                low = low[(low > elow_1n) & (low < ehigh)]
+                med = med[(med > elow_1n) & (med < ehigh)]
+                high = high[(high > elow_1n) & (high < ehigh)]
+            else:
+                low = loadtxt(f"{sk4toydir}/low.txt")
+                med = loadtxt(f"{sk4toydir}/med.txt")
+                high = loadtxt(f"{sk4toydir}/high.txt")
+                low = low[(low > elow) & (low < ehigh)]
+                med = med[(med > elow) & (med < ehigh)]
+                high = high[(high > elow) & (high < ehigh)]
         return low,med,high
 
     def get_spasolbins(ntag=False):
@@ -1000,7 +1133,10 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
             p += [[pdf(e, sknum, model, elow, i, regionid[region],
                 signal=signal, backgrounds=backgrounds, ntag=ntag)
                 for i in range(len(pdfid))]]
-        return array(p)  # (Nen x Npdf)
+        p = array(p)
+        if len(p) == 0: # No events in region
+            p = p.reshape((0, len(pdfid)))
+        return p  # (Nen x Npdf)
 
     def initialize(low, med, high, rel):
         ''' Initialization '''
@@ -1060,6 +1196,9 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
 
     if sknum == 2:
         elow = 17.5
+    
+    if skgd_conc is not None:
+        skgd_params(skgd_conc)
 
     samplow, sampmed, samphigh = load_sample()
     samples_n = None
@@ -1071,26 +1210,24 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
     signal = None
     effsignal = 1.0
     signal, flux_fac, pred_rate, pred_flux = load_signal_pdf(sknum, model, elow, ehigh, elow_1n)
-    # if ':' not in model:
-    #     try:
-    #         flux_fac = fluxfac[model]
-    #     except KeyError:
-    #         pass
-    # Always use calculated fluxfacs
 
     bgs_sk4 = None
     bg_sk4_dir = "./pdf_bg_sk4"
-    # if sknum < 4:    # TODO
-    #     effsignal = efftot[model][sknum - 1]   # TODO
-    # else:
     effsignal = signal.overall_efficiency_16_90() # Always use calculated eff.
     # Load background pdfs
     # WARNING!!! 16 MeV threshold is hardcoded there!
     cut_bins_ntag, cut_effs_ntag = get_spasolbins(ntag=True)
     cut_bins, cut_effs = get_spasolbins(ntag=False)
+
+    ntag_rescaling = ones((4, 2))
+    if skgd_conc is not None:
+        ntag_rescaling = spasol_ntag_weight([cut_bins, cut_bins_ntag],
+                            [cut_effs, cut_effs_ntag], ntag_ebins,
+                            ntag_effs*ntag_eff_ps, ntag_bgs, ntag_bg_ps,
+                            elow, elow_1n, ehigh)
     bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs,
-                cut_bins_ntag, cut_effs_ntag, bg_sk4_dir,
-                elow, ehigh=ehigh, elow_n=elow_1n) for i in range(4)]
+                cut_bins_ntag, cut_effs_ntag, bg_sk4_dir, elow, ehigh=ehigh,
+                elow_n=elow_1n, ntag_scale=ntag_rescaling) for i in range(4)]
     print(f"Efficiency is {effsignal}")
 
     # Get pdfs. PDF matrices: (Nen x Npdf)
@@ -1212,7 +1349,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                 print("Step {}/1000, like = {}".format(i, likedata[-1][-1]), flush=True)
 
     results = column_stack((arange(rmin, rmax, rstep), likedata))
-    results = results[results[:, 0] >= 0]   # results[i] = rel, nback, rel, like
+    results = results[results[:, 0] >= 0]   # results[i] = rel, nback[0:4], rel, like
 
     # Systematic efficiency error correction + limits
     _, best2, errplus2, errminus2, limit2 = analyse(results)
@@ -1345,10 +1482,55 @@ def fullike(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=None, 
     print(f"Predicted flux: {pred_flux}")
 
 
-if __name__ == "__main__":
-    modelname = argv[1]
-    directory = argv[2]
-    systematics = 1 if len(argv) <= 3 else int(argv[3])
+def sk4like(model, elow_sk4, ehigh_sk4, elow_sk4_1n=None, toydir=None,
+            rmin=-5, rmax=100, rstep=0.1, quiet=False, outdir='.',
+            systematics=1, skgd_conc=None):
+    """ Fit SK I-IV data """
+    if elow_sk4_1n is None:
+        elow_sk4_1n = elow_sk4
+    like4 = maxlike(4, model, elow_sk4, ehigh_sk4, elow_sk4_1n, rmin, rmax,
+                    rstep, quiet=quiet, outdir=outdir, sk4toydir=toydir,
+                    systematics=systematics, skgd_conc=skgd_conc)
+    fluxlim, fluxfac, result, = like4[0], like4[1], like4[2]
+    pred_rate, pred_flux = like4[3], like4[4]
+    ratelim = fluxlim / fluxfac
 
-    fullike(modelname, elow=16, ehigh=90, elow_sk2 = 17.5, elow_sk4=20,
-            ehigh_sk4=80, elow_sk4_1n=16, outdir=directory, systematics = systematics)
+    print("")
+    print("90%% c.l. rate limit is: %f > 16 MeV" % ratelim)
+    print(f"Predicted rate: {pred_rate}")
+
+    print("")
+    print("90%% c.l. flux limits are: %f /cm^2/s > 17.3 MeV" % fluxlim)
+    print(f"Predicted flux: {pred_flux}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('modelname', help="DNSB model name")
+    parser.add_argument('directory', help='Fit output directory')
+    parser.add_argument('--sys', help='systematics mode [-1, 0, 1, or 2]', type=int, default = 1)
+    parser.add_argument('--thr', help='SK4 Energy threshold (non-IBD region)', type=float)
+    parser.add_argument('--thr1n', help='SK4 Energy threshold (IBD region)', type=float)
+    parser.add_argument('--toy', help='Toy dataset location (replaces data)')
+    parser.add_argument('--gd', help=('Specify Gd concentration (0.1 or 0.01),'
+                                    ' otherwise water is assumed'), type=float)
+    args = parser.parse_args()
+
+    modelname = args.modelname
+    directory = args.directory
+    systematics = args.sys
+    e_thr = args.thr if args.thr else 20
+    e_thr_1n = args.thr1n if args.thr1n else 16
+
+    if args.toy:
+        toy_data_dir = args.toy
+        quiet = True
+        sk4like(modelname, elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
+            outdir=directory, toydir=toy_data_dir, systematics=systematics,
+            skgd_conc=args.gd)
+
+    else:
+        quiet = False
+        fullike(modelname, elow=16, ehigh=90, elow_sk2=17.5,
+            elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
+            outdir=directory, systematics=systematics)

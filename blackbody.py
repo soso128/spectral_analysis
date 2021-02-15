@@ -17,4 +17,4 @@ modelname = r'{"type": 0, "tnu": ' + f'{nutemp}' + r', "lumi": ' +  f'{3e53 * er
 directory = argv[2]
 
 # Run fit
-ft.fullike(modelname, elow=16, ehigh=90, elow_sk2 = 17.5, elow_sk4=20, ehigh_sk4=80, elow_sk4_1n=16, outdir=directory)
+ft.fullike(modelname, elow=16, ehigh=90, elow_sk4=20, ehigh_sk4=80, elow_sk4_1n=16, outdir=directory)
