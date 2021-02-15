@@ -1389,7 +1389,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('modelname', help="DNSB model name")
     parser.add_argument('directory', help='Fit output directory')
-    parser.add_argument('--sys', help='systematics mode [-1, 0, 1, or 2]', type=int)
+    parser.add_argument('--sys', help='systematics mode [-1, 0, 1, or 2]', type=int, default = 1)
     parser.add_argument('--thr', help='SK4 Energy threshold (non-IBD region)', type=float)
     parser.add_argument('--thr1n', help='SK4 Energy threshold (IBD region)', type=float)
     parser.add_argument('--toy', help='Toy dataset location (replaces data)')
@@ -1399,7 +1399,7 @@ if __name__ == "__main__":
 
     modelname = args.modelname
     directory = args.directory
-    systematics = args.sys if args.sys else 1
+    systematics = args.sys
     e_thr = args.thr if args.thr else 20
     e_thr_1n = args.thr1n if args.thr1n else 16
 
