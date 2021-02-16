@@ -42,13 +42,12 @@ class bg_sk4:
         self.norm0 = self._get_norm0() # Normalization of source pdf to 1
         self.norm = self._get_norm() # Normalization after cuts to 1
 
-
     def _adjust_effs(self, bins, effs, elow, ehigh):
         newbins, neweffs = bins, effs
         if elow < bins[0]:
-            newbins, neweffs = [elow] + bins, [1.0] + effs
+            newbins, neweffs = [elow] + list(bins), [1.0] + list(effs)
         if bins[-1] < ehigh:
-            newbins, neweffs = bins + [ehigh], effs + [1.0]
+            newbins, neweffs = list(bins) + [ehigh], list(effs) + [1.0]
         return newbins, neweffs
 
     def _load_param_array(self, ev_type):
@@ -143,8 +142,6 @@ class relic_sk:
         if elow < min(spectrum_energies):
             raise ValueError("elow must be within given spectrum")
         if elow_n is not None:
-            if elow_n < 14.0:
-                raise ValueError("Can't go lower than 14 MeV for ntag!")
             if elow_n < min(spectrum_energies):
                 raise ValueError("elow must be within given spectrum")
 

@@ -61,7 +61,7 @@ effs_3rdred = [effsk1, effsk2, effsk3, effsk4]
 spaeff_sk1 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
 spaeff_sk2 = array([[17.5, 0.762], [20, 0.882], [26, 1.0]])
 spaeff_sk3 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
-spaeff_sk4 = array([[16, 0.852], [18, 0.925], [20, 0.935], [24, 0.98]])
+spaeff_sk4 = array([[12, 0.8], [16, 0.852], [18, 0.925], [20, 0.935], [24, 0.98]])
 spaeff_sk4_nontag = array([[16, 0.725], [18, 0.855], [20, 0.898], [24, 0.98]])
 spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4_nontag]
 
@@ -76,8 +76,8 @@ soleff_sk4 = array([[16, 0.7226], [17, 0.8138], [18, 0.8718],
 soleff = [soleff_sk1, soleff_sk2, soleff_sk3, soleff_sk4]
 
 # SK4 ntag efficiencies
-ntag_ebins = [16, 90]
-bdt_cuts = [0.620]
+ntag_ebins = [12,14,16,90]
+bdt_cuts = [0.9978,0.9814,0.620]
 emin, emax = ntag_ebins[0], ntag_ebins[-1]
 bdt_roc = genfromtxt('../../roc_curve_N10gt5_cut6_nlow1_newsys_fakedata.roc')
 cuts_roc, roc_effs, roc_bg = bdt_roc[:,0], bdt_roc[:,1], bdt_roc[:,2]
@@ -197,7 +197,6 @@ def skgd_params(concentration):
     """ Update fit parameters for fitting against SK-Gd projection
     Concentration can be 0.1 or 0.01 (%) """
     # SK-Gd ntag parameters
-    skgd_ntag = False # Turn on for SK-Gd ntag efficiency
     if concentration == 0.01:
         gd_cap_frac = 0.5
     elif concentration == 0.1:
@@ -205,7 +204,7 @@ def skgd_params(concentration):
     else:
         raise ValueError("Gd concentration must be 0.01 or 0.1")
     gd_livetime = 10 * 365.25
-    atm_eff = 1.0 #0.4
+    # atm_eff = 1.0 #0.4
     h2o_eff_ps_all = 0.562 # Pure water presel. efficiency before time window
     gd_eff_ps_all = 0.995 # Pure Gd presel. efficiency before time window
     n_tau = 204.8  # neutron capture characteristic time, microsecs
@@ -247,19 +246,10 @@ def skgd_params(concentration):
     print(f"with ntag efficiencies of {ntag_effs*ntag_eff_ps}")
 
 
-def spasol_ntag_weight(spasol_bins, spasol_effs,
-                       ntag_bins, ntag_effs,
-                       ntag_bgs, ntag_bg_ps, elow, elow_1n, ehigh):
+def ntag_rescale(ntag_bins, ntag_effs, ntag_bgs, ntag_bg_ps):
     " Pdf rescalings for SK-Gd ntag efficiency "
 
-    def empty(n): return [[] for _ in range(n)]
-    def ar_sum(ar):
-        tot = 0
-        try: tot += sum([ar_sum(a) for a in ar])
-        except TypeError: tot += ar
-        return tot
-
-    def ntag_weight(E, ncap, ntag=True, gd=True):
+    def ntag_weight(E, ncap, ntag=True):
         ebin = digitize(E, ntag_bins)
         ef = ntag_effs[ebin-1]
         bgrate = ntag_bgs[ebin-1]
@@ -287,8 +277,9 @@ def spasol_ntag_weight(spasol_bins, spasol_effs,
     wgts_arr = [wgt_CC_nue, wgt_decaye_mc, wgt_NC, wgt_mupi]
     ncaps_arr = [n_CC_nue, n_decaye_mc, n_NC, n_mupi]
 
-    Wgts = [[empty(3), empty(3)] for _ in range(4)]
-    ntag_wgt_tot_rescaled = zeros((4, 2))
+    num_ntag_bins = len(ntag_bins) - 1
+    ntag_wgt_h2o = zeros((4, 2, num_ntag_bins)) # Water
+    ntag_wgt_rescaled = zeros((4, 2, num_ntag_bins)) # Gd (using nominal BDT effs)
     for bg_pdf in range(4):
         for ntag_id, ntw in enumerate(wgts_arr[bg_pdf]):
             for angle_id, weights in enumerate(ntw):
@@ -296,29 +287,20 @@ def spasol_ntag_weight(spasol_bins, spasol_effs,
                 en = array(enes_arr[bg_pdf][ntag_id][angle_id])
                 nc = array(ncaps_arr[bg_pdf][ntag_id][angle_id])
 
-                if ntag_id: cut = (en > elow_1n) & (en < ehigh)
-                else: cut = (en > elow) & (en < ehigh)
-                en = en[cut]
-                wt = wt[cut]
-                nc = nc[cut]
+                binid_ntag = digitize(en, ntag_bins) - 1
+                for bid in range(num_ntag_bins):
+                    bin_wt = wt[binid_ntag == bid]
+                    bin_en = en[binid_ntag == bid]
+                    bin_nc = nc[binid_ntag == bid]
 
-                binid = digitize(en, spasol_bins[ntag_id])
-                spasol_eff = array(spasol_effs[ntag_id])[binid - 1]
-                wt *= spasol_eff
-                Wgts[bg_pdf][ntag_id][angle_id] = wt
+                    ntag_wgt_h2o[bg_pdf, ntag_id, bid] += sum(bin_wt)
 
-                nt0_wgt2 = [w*ntag_weight(e,n,False,True) for e,n,w in zip(en, nc, wt)]
-                nt1_wgt2 = [w*ntag_weight(e,n,True,True) for e,n,w in zip(en, nc, wt)]
-                ntag_wgt_tot_rescaled[bg_pdf, 0] += sum(nt0_wgt2)
-                ntag_wgt_tot_rescaled[bg_pdf, 1] += sum(nt1_wgt2)
-    ntag_scaling_atm = array([[ar_sum(b[0]), ar_sum(b[1])] for b in Wgts])
-    ntag_scaling_atm /= sum(array([[ar_sum(b[0]),ar_sum(b[1])] for b in Wgts]), axis=1, keepdims=True)
-    ntag_scaling2 = ntag_wgt_tot_rescaled / sum(ntag_wgt_tot_rescaled, axis=1, keepdims=True)
-    # ntag_scaling2_cut = ntag_scaling2.copy()
-    # ntag_scaling2_cut[:, 1] = ntag_scaling2[:, 1] * atm_eff
-    # ntag_scaling2_cut[:, 0] = 1.0 - ntag_scaling2[:, 1] * atm_eff
-    # ntag_scaling2 = ntag_scaling2_cut
-    ntag_rescaling = ntag_scaling2 / ntag_scaling_atm
+                    wgt_nt0 = bin_wt * ntag_weight(bin_en,bin_nc,False)
+                    wgt_nt1 = bin_wt * ntag_weight(bin_en,bin_nc,True)
+                    ntag_wgt_rescaled[bg_pdf, 0, bid] += sum(wgt_nt0)
+                    ntag_wgt_rescaled[bg_pdf, 1, bid] += sum(wgt_nt1)
+
+    ntag_rescaling = ntag_wgt_rescaled / ntag_wgt_h2o
 
     return ntag_rescaling
 
@@ -1219,15 +1201,27 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
     cut_bins_ntag, cut_effs_ntag = get_spasolbins(ntag=True)
     cut_bins, cut_effs = get_spasolbins(ntag=False)
 
-    ntag_rescaling = ones((4, 2))
+    # ntag_rescaling = ones((4, 2))
     if skgd_conc is not None:
-        ntag_rescaling = spasol_ntag_weight([cut_bins, cut_bins_ntag],
-                            [cut_effs, cut_effs_ntag], ntag_ebins,
-                            ntag_effs*ntag_eff_ps, ntag_bgs, ntag_bg_ps,
-                            elow, elow_1n, ehigh)
-    bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs,
-                cut_bins_ntag, cut_effs_ntag, bg_sk4_dir, elow, ehigh=ehigh,
-                elow_n=elow_1n, ntag_scale=ntag_rescaling) for i in range(4)]
+        ntag_rescaling = ntag_rescale(ntag_ebins, ntag_effs*ntag_eff_ps,
+                                            ntag_bgs, ntag_bg_ps)
+        new_bins = sorted(list(set(append(cut_bins, ntag_ebins))))
+        spa_new = array(cut_effs)[digitize(new_bins[:-1], cut_bins) - 1]
+        rescale_new = ntag_rescaling[:,0,digitize(new_bins[:-1],ntag_ebins)-1]
+        cut_bins = new_bins
+        cut_effs = spa_new[newaxis,:] * rescale_new
+
+        new_bins_n = sorted(list(set(append(cut_bins_ntag, ntag_ebins))))
+        spa_new_n = array(cut_effs_ntag)[digitize(new_bins_n[:-1], cut_bins_ntag)-1]
+        rescale_new_n = ntag_rescaling[:,1,digitize(new_bins_n[:-1],ntag_ebins)-1]
+        cut_bins_ntag = new_bins_n
+        cut_effs_ntag = spa_new_n[newaxis,:] * rescale_new_n
+    else:
+        cut_bins_ntag = tile(cut_bins_ntag, (4, 1))
+
+    bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs[i],
+                cut_bins_ntag, cut_effs_ntag[i], bg_sk4_dir, elow,
+                ehigh=ehigh, elow_n=elow_1n ) for i in range(4)]
     print(f"Efficiency is {effsignal}")
 
     # Get pdfs. PDF matrices: (Nen x Npdf)
@@ -1513,7 +1507,7 @@ if __name__ == "__main__":
     parser.add_argument('--thr1n', help='SK4 Energy threshold (IBD region)', type=float)
     parser.add_argument('--toy', help='Toy dataset location (replaces data)')
     parser.add_argument('--gd', help=('Specify Gd concentration (0.1 or 0.01),'
-                                    ' otherwise water is assumed'), type=float)
+                                      ' otherwise water is assumed'), type=float)
     args = parser.parse_args()
 
     modelname = args.modelname
