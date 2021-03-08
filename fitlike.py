@@ -1170,7 +1170,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         flikes = interp1d(likes[:, -2], exp(likes[:, -1] - lmax), # like(relic)
                           bounds_error=False, fill_value = 0)
         rates = arange(rmin, rmax, rstep)
-        lconv = flikes(rates[:, newaxis] * epsrange[newaxis, :] * livetimes[sknum - 1]/365.25* 0.5) # TODO
+        lconv = flikes(rates[:, newaxis] * epsrange[newaxis, :] * livetimes[sknum - 1]/365.25* 0.5)
         simpsoncoeff = array([step/3.] + list((1 + (arange(1,1000)%2))*2./3 * step) + [step/3.])
         ltot = (lconv * (pgaus * epsrange * simpsoncoeff)).sum(axis = 1)
         likenew = log(ltot) + lmax
@@ -1217,7 +1217,8 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         cut_bins_ntag = new_bins_n
         cut_effs_ntag = spa_new_n[newaxis,:] * rescale_new_n
     else:
-        cut_bins_ntag = tile(cut_bins_ntag, (4, 1))
+        cut_effs = tile(cut_effs, (4, 1))
+        cut_effs_ntag = tile(cut_effs_ntag, (4, 1))
 
     bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs[i],
                 cut_bins_ntag, cut_effs_ntag[i], bg_sk4_dir, elow,
@@ -1508,6 +1509,7 @@ if __name__ == "__main__":
     parser.add_argument('--toy', help='Toy dataset location (replaces data)')
     parser.add_argument('--gd', help=('Specify Gd concentration (0.1 or 0.01),'
                                       ' otherwise water is assumed'), type=float)
+    parser.add_argument('--lt', help='Toy dataset livetime in days (default: 10yrs)', type=float, default=3652.5)
     args = parser.parse_args()
 
     modelname = args.modelname
@@ -1519,6 +1521,7 @@ if __name__ == "__main__":
     if args.toy:
         toy_data_dir = args.toy
         quiet = True
+        livetimes[3] = args.lt
         sk4like(modelname, elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
             outdir=directory, toydir=toy_data_dir, systematics=systematics,
             skgd_conc=args.gd)
