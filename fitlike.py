@@ -34,8 +34,16 @@ efftot = {"lma": [0.7975,0.56703,0.77969],
           "ksw" : [0.7908, 0.54527, 0.77371]}
 fluxfac = {"lma": 0.535115, "malaney": 0.5845, "ksw": 0.488413,
            "faild": 0.431, "woosley": 0.47447}
-sys_eff = array([0.0254, 0.0404, 0.0253, 0.0214])
-sys_eff_sk4_ntag = 0.10
+# Systematics for signal: reduction efficiency, livetime, Strumia-Vissani cross-section, FV
+sys_eff = array([0.0254, 0.0404, 0.0253, 0.0200])
+sys_livetime = 0.001
+sys_xsec = 0.01
+sys_fv = array([0.013, 0.011, 0.010, 0.009])
+sys_eff = sqrt(sys_eff**2 + sys_livetime**2 + sys_xsec**2 + sys_fv**2)
+# Ntag cut systematics from AmBe study for SK-IV
+sys_eff_sk4_ntag = 0.06
+
+# Definitions
 regionid = {"low": 0, "medium": 1, "high": 2}
 pdfid = {"nue": 0, "numu": 1, "nc": 2, "mupi": 3, "rel": 4}
 modelid = {"lma": 0, "faild": -3, "malaney": -1, "ksw": -2, "woosley": -4}
@@ -58,11 +66,12 @@ effsk1 = interp1d(effs_sk1[:,0], effs_sk1[:,1], bounds_error=False,
                   fill_value = (effs_sk1[0,1], effs_sk1[-1,1]))
 effs_3rdred = [effsk1, effsk2, effsk3, effsk4]
 
+# Spallation cut efficiencies
 spaeff_sk1 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
 spaeff_sk2 = array([[17.5, 0.762], [20, 0.882], [26, 1.0]])
 spaeff_sk3 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
-spaeff_sk4 = array([[12, 0.8], [16, 0.852], [18, 0.925], [20, 0.935], [24, 0.98]])
-spaeff_sk4_nontag = array([[16, 0.725], [18, 0.855], [20, 0.898], [24, 0.98]])
+spaeff_sk4 = array([[12, 0.8], [16, 0.826], [18, 0.889], [20, 0.918], [24, 0.98]])
+spaeff_sk4_nontag = array([[16, 0.826], [18, 0.889], [20, 0.918], [24, 0.98]])
 spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4_nontag]
 
 soleff_sk1 = array([[16, 0.738], [17, 0.821], [18, 0.878],
@@ -76,8 +85,8 @@ soleff_sk4 = array([[16, 0.7226], [17, 0.8138], [18, 0.8718],
 soleff = [soleff_sk1, soleff_sk2, soleff_sk3, soleff_sk4]
 
 # SK4 ntag efficiencies
-ntag_ebins = [12,14,16,90]
-bdt_cuts = [0.9978,0.9814,0.620]
+ntag_ebins = [12,14,16,18,20,22,24,26,28,90]
+bdt_cuts = [0.958,0.874,0.972,0.855,0.339,0.24,0.241,0.809,0.669]
 emin, emax = ntag_ebins[0], ntag_ebins[-1]
 bdt_roc = genfromtxt('ROCs/roc_curve_N10gt5_cut6_nlow1_newsys_fakedata.roc')
 cuts_roc, roc_effs, roc_bg = bdt_roc[:,0], bdt_roc[:,1], bdt_roc[:,2]
