@@ -1601,7 +1601,7 @@ def fullike(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=None, 
     if not quiet:
         plt.style.use("seaborn")
         plt.figure()
-        plt.xlabel("SRN events/year")
+        plt.xlabel("DSNB events/year")
         plt.ylabel("Likelihood")
         x = results[0][:, 0]/2
         plt.plot(x, results[0][:, -1] - results[0][:,-1].max(),
