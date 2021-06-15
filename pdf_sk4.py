@@ -2,7 +2,7 @@
 Wrapper classes for relic and SK-IV backgrounds.
 '''
 from pickle import load as loadpick
-from numpy import digitize, array, ones
+from numpy import digitize, array, ones, exp
 from scipy import interpolate
 from scipy.integrate import quad
 
@@ -124,6 +124,94 @@ class bg_sk4:
         cut_eff = self.cut_effs[ntag][ebin-1]
         p0 = self.pdf_before_cuts(energy, region, ntag)
         return self.norm * cut_eff * p0 * self.ntag_scale[int(ntag)]
+
+# Models spallation backgrounds
+class spall_sk():
+    ''' Usage (for 16 MeV threshold):
+    spall = spall_sk4(cut_edges, efficiencies, efficiencies_3rd, 16) 
+    spall.pdf(energy, region)
+    '''
+    def __init__(self, cut_bins, cut_effs, efficiency_func, sknum, elow, ehigh=90.0):
+        '''cut_bins should be a list of N energy bin edges.
+        cut_effs should be a list of N-1 cut efficiencies.
+        '''
+        if elow < 10.0:
+            raise ValueError("Can't go lower than 10 MeV!")
+        self.elow = elow
+        self.ehigh = ehigh
+
+        bins, effs = self._adjust_effs(cut_bins, cut_effs, elow, self.ehigh)
+        self.cut_bins = bins
+        self.cut_effs = effs
+        self.efficiency_func = efficiency_func
+
+        self.func = self._get_func(sknum)
+        self.norm0 = self._get_norm0()
+        self.norm = self._get_norm() # Normalization after cuts to 1
+
+    def _adjust_effs(self, bins, effs, elow, ehigh):
+        newbins, neweffs = bins, effs
+        if elow < bins[0]:
+            newbins, neweffs = [elow] + list(bins), [1.0] + list(effs)
+        if bins[-1] < ehigh:
+            newbins, neweffs = list(bins) + [ehigh], list(effs) + [1.0]
+        return newbins, neweffs
+
+    # TODO: make for all SK phases (not just SK-IV)
+    def _get_func(self, sknum):
+        spall_emax = 24
+        expcoeff = 1./132.40271295
+        return lambda x: exp(-expcoeff*x**2.5) if x < spall_emax else 0
+
+    def _get_norm0(self):
+        ''' PDF normalization, before cuts '''
+        spall_emax = 24
+        return 1./quad(self.func, self.elow, min(self.ehigh,spall_emax))[0]
+
+    def pdf_before_cuts(self, energy, region, ntag):
+        ''' Properly normalized pdf, before cuts '''
+        self._check_valid_energy(energy)
+        if region != 1 or ntag: return 0
+        return self.func(energy) * self.norm0
+
+    def _get_norm(self):
+        ''' Get pdf normalization after cuts '''
+        area = 0.0
+        for i, cut_eff in enumerate(self.cut_effs):
+            e_lo, e_hi = self.cut_bins[i], self.cut_bins[i+1]
+            if e_hi < self.elow:
+                continue
+            elif e_lo < self.elow:
+                e_lo = self.elow
+            if e_lo > self.ehigh:
+                continue
+            elif e_hi > self.ehigh:
+                e_hi = self.ehigh
+            a0, _ = quad(lambda x: self.pdf_before_cuts(x, 1, 0) * 
+                         self.efficiency_func(x), e_lo, e_hi)
+            area += a0 * cut_eff
+        return 1.0 / area
+
+    def _check_valid_energy(self, energy):
+        if energy < self.elow or energy > self.ehigh:
+            raise ValueError("Energy (%0.2f) outside range (%0.2f-%0.2f)"
+                             % (energy, self.elow, self.ehigh))
+
+    def pdf(self, energy, region, ntag):
+        ''' Properly normalized pdf, after cuts '''
+        try:
+            self._check_valid_energy(energy)
+        except ValueError:
+            return 1e-10
+
+        ebin = digitize(energy, self.cut_bins)
+        if ebin < 1 or ebin >= len(self.cut_bins):
+            return 1e-10
+
+        cut_eff = self.cut_effs[ebin-1]
+        p0 = self.pdf_before_cuts(energy, region, ntag)
+        return self.norm * cut_eff * p0 * self.efficiency_func(energy)
+
 
 class relic_sk:
     '''
