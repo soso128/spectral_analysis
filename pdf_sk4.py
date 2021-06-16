@@ -160,8 +160,8 @@ class spall_sk():
     # TODO: make for all SK phases (not just SK-IV)
     def _get_func(self, sknum):
         spall_emax = 24
-        expcoeff = 1./132.40271295
-        return lambda x: exp(-expcoeff*x**2.5) if x < spall_emax else 0
+        expcoeff = 1./7140.7
+        return lambda x: exp(-expcoeff*x**3.746) if x < spall_emax else 0
 
     def _get_norm0(self):
         ''' PDF normalization, before cuts '''

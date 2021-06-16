@@ -70,8 +70,8 @@ effs_3rdred = [effsk1, effsk2, effsk3, effsk4]
 spaeff_sk1 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
 spaeff_sk2 = array([[17.5, 0.762], [20, 0.882], [26, 1.0]])
 spaeff_sk3 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
-spaeff_sk4 = array([[12, 0.8], [16, 0.68], [18, 0.65], [20, 0.918], [24, 0.98]])
-spaeff_sk4_nontag = array([[16, 0.826], [18, 0.889], [20, 0.918], [24, 0.98]])
+spaeff_sk4_nontag = array([[12, 0.8], [16, 0.68], [18, 0.65], [20, 0.918], [24, 0.98]])
+spaeff_sk4 = array([[16, 0.826], [18, 0.889], [20, 0.918], [24, 0.98]])
 spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4_nontag]
 
 soleff_sk1 = array([[16, 0.738], [17, 0.821], [18, 0.878],
@@ -670,14 +670,15 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
         ncfact_high = 1 - sigmas2 * nc_mult * normncmed/normnchigh #  (Nsigmas2)
 
         # Correction factors for spallation
+        spacoeffs = [0.05485892, 1.67346126 , 12.60970234]
         if use_spall:
             sigmas3 = arange(-2, 2.5, 0.5)
             norm0 = pdfnorm(pdfids['spall'], regionids['medium'])
             norm1 = pdfmoment(pdfids['spall'], regionids['medium'])
             norm2 = pdfmoment(pdfids['spall'], regionids['medium'], order = 2)
-            normspa = 1./(1 + 2*sigmas3 * (0.00596403 * norm2 - 0.31610871 * norm1 + 3.64348089 * norm0))
-            spafact = normspa * (1 + 2*sigmas3[newaxis,:] * (0.00596403 * energies_med[:, newaxis]**2 
-                                                           - 0.31610871 * energies_med[:, newaxis] + 3.64348089))
+            normspa = 1./(1 + sigmas3 * (spacoeffs[0] * norm2 - spacoeffs[1] * norm1 + spacoeffs[2] * norm0))
+            spafact = normspa * (1 + sigmas3[newaxis,:] * (spacoeffs[0] * energies_med[:, newaxis]**2 
+                                                           - spacoeffs[1] * energies_med[:, newaxis] + spacoeffs[2]))
 
             # make systematics tensors (Nenergies x Npdfs x Nsigmas x Nsigmas2)
             sysmatrix_med = ones((len(energies_med), numbkg + 1, len(sigmas), len(sigmas2), len(sigmas3)))
@@ -738,9 +739,9 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
             norm0 = pdfnorm(pdfids['spall'], regionids['medium'])
             norm1 = pdfmoment(pdfids['spall'], regionids['medium'])
             norm2 = pdfmoment(pdfids['spall'], regionids['medium'], order = 2)
-            normspa = 1./(1 + 2*sigmas4 * (0.00596403 * norm2 - 0.31610871 * norm1 + 3.64348089 * norm0))
-            epoly =(0.00596403 * energies_med**2 - 0.31610871 * energies_med + 3.64348089) 
-            spafact = normspa * (1 + 2*sigmas4[newaxis,:] * epoly[:, newaxis])
+            normspa = 1./(1 + sigmas4 * (spacoeffs[0] * norm2 - spacoeffs[1] * norm1 + spacoeffs[2] * norm0))
+            epoly =(spacoeffs[0] * energies_med**2 - spacoeffs[1] * energies_med + spacoeffs[2]) 
+            spafact = normspa * (1 + sigmas4[newaxis,:] * epoly[:, newaxis])
 
             # make systematics tensors (Nen x Npdfs x Nsig x Nsig2 x Nsig3 x Nsig4)
             sys_shape_low = (len(energies_low), numbkg + 1,
@@ -990,7 +991,6 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0, use_spall = False):
                 + log(einsum(indexstring, nevents, pdfs_dist_low_1n)).sum(axis=0)
                 - nrelic - nbackgrounds.sum())
         totmax = totlike.max()
-        print(totlike.shape)
         if use_spall:
             likenew = log((exp(totlike - totmax)
                         * wgauss[:, newaxis, newaxis, newaxis]
