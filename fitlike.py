@@ -70,8 +70,10 @@ effs_3rdred = [effsk1, effsk2, effsk3, effsk4]
 spaeff_sk1 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
 spaeff_sk2 = array([[17.5, 0.762], [20, 0.882], [26, 1.0]])
 spaeff_sk3 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
+#spaeff_sk4_nontag = array([[12, 0.8], [16, 0.473], [18, 0.499], [20, 0.918], [24, 0.98]])
 spaeff_sk4_nontag = array([[12, 0.8], [16, 0.68], [18, 0.65], [20, 0.918], [24, 0.98]])
 spaeff_sk4 = array([[16, 0.826], [18, 0.889], [20, 0.918], [24, 0.98]])
+#spaeff_sk4_nontag = array([[16, 0.826], [18, 0.889], [20, 0.918], [24, 0.98]])
 spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4_nontag]
 
 soleff_sk1 = array([[16, 0.738], [17, 0.821], [18, 0.878],
@@ -1130,7 +1132,6 @@ def plotfit(nnue, nnumu, nnc, nmupi, nspall, nrelic, model, sknum, elow, ehigh, 
         h = histogram(data, bins = arange(elow, ehigh,step))
         x = h[1][1:] - 0.5 * (h[1][1:] - h[1][:-1])
         ax.errorbar(x, h[0], xerr = step/2, yerr = sqrt(h[0]), fmt = '.', color = 'black')
-        ax.set_ylim(0,30)
         if ax.is_first_col():
             ax.legend(loc='upper left', prop={'size': 12})
             if ntag is None:
@@ -1188,9 +1189,14 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                 med = med[(med > elow_1n) & (med < ehigh)]
                 high = high[(high > elow_1n) & (high < ehigh)]
             else:
+                #if sknum < 4:
                 low = loadtxt("sk{}/samplelow.txt".format(int(sknum)))[:, 1]
                 med = loadtxt("sk{}/samplemed.txt".format(int(sknum)))[:, 1]
                 high = loadtxt("sk{}/samplehigh.txt".format(int(sknum)))[:, 1]
+                #if sknum == 4:
+                    #low = loadtxt("sk{}/tight/samplelow.txt".format(int(sknum)))[:, 1]
+                    #med = loadtxt("sk{}/tight/samplemed.txt".format(int(sknum)))[:, 1]
+                    #high = loadtxt("sk{}/tight/samplehigh.txt".format(int(sknum)))[:, 1]
                 low = low[(low > elow) & (low < ehigh)]
                 med = med[(med > elow) & (med < ehigh)]
                 high = high[(high > elow) & (high < ehigh)]
