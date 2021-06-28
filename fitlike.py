@@ -647,6 +647,7 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
     # CC distortion sigmas
     sigmas = arange(-1, 3.5, 0.5)
     numbkg = 5 if use_spall else 4
+    spacoeffs = [0.05485892, 1.67346126 , 12.60970234]
     if sknum < 4:
         assert energies_n is None
         assert len(energies) == 2
@@ -670,7 +671,6 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
         ncfact_high = 1 - sigmas2 * nc_mult * normncmed/normnchigh #  (Nsigmas2)
 
         # Correction factors for spallation
-        spacoeffs = [0.05485892, 1.67346126 , 12.60970234]
         if use_spall:
             sigmas3 = arange(-2, 2.5, 0.5)
             norm0 = pdfnorm(pdfids['spall'], regionids['medium'])
@@ -875,7 +875,7 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0, u
         wgauss = asym_gaussian()
         wgauss2 = asym_gaussian() if sknum < 4 else 0.20997 * exp(-arange(-2,2.5,0.5)**2/2.)
         nevents = array(list(nbackgrounds) + [nrelic])
-        indexstring = "j,ijklm" if use_spall else "j,ijklm"
+        indexstring = "j,ijklm" if use_spall else "j,ijkl"
         totlike = (log(einsum(indexstring, nevents, pdfs_high)).sum(axis = 0)
                    + log(dot(nevents,pdfs_low.T)).sum(axis = 0)
                    + log(einsum(indexstring, nevents, pdfs_med)).sum(axis = 0)
@@ -1098,8 +1098,8 @@ def analyse(likes, final=False):
     return lmax, best, errplus, errminus, l90
 
 
-def plotfit(nnue, nnumu, nnc, nmupi, nspall, nrelic, model, sknum, elow, ehigh, elow_1n,
-            samples, samples_n=None, signal=None, background=None, use_spall = False):
+def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, elow, ehigh, elow_1n,
+            samples, nrelic = 0, nspall = 0, samples_n=None, signal=None, background=None, use_spall = False):
     """ Plot spectral fit """
     def plotregion(region, data, ax, elow=elow, ntag=None):
         #plt.figure()
@@ -1130,7 +1130,6 @@ def plotfit(nnue, nnumu, nnc, nmupi, nspall, nrelic, model, sknum, elow, ehigh, 
         h = histogram(data, bins = arange(elow, ehigh,step))
         x = h[1][1:] - 0.5 * (h[1][1:] - h[1][:-1])
         ax.errorbar(x, h[0], xerr = step/2, yerr = sqrt(h[0]), fmt = '.', color = 'black')
-        ax.set_ylim(0,30)
         if ax.is_first_col():
             ax.legend(loc='upper left', prop={'size': 12})
             if ntag is None:
@@ -1140,10 +1139,11 @@ def plotfit(nnue, nnumu, nnc, nmupi, nspall, nrelic, model, sknum, elow, ehigh, 
             else:
                 ax.set(ylabel="Number of events after cuts\n0 / >1 neutron tags")
         if ax.is_first_row():
-            titles = [r"Low sideband (20 < $\Theta_C$ < 38)",
+            titles = [r"Sideband (20 < $\Theta_C$ < 38)",
                       r"Signal region (38 < $\Theta_C$ < 50)",
-                      r"High sideband (78 < $\Theta_C$ < 90)"]
+                      r"Sideband (78 < $\Theta_C$ < 90)"]
             ax.set(title=titles[region])
+            ax.title.set_fontsize(10)
         ax.set(xlabel = "E$_p$ (MeV)")
 
     plt.style.use("seaborn")
@@ -1536,10 +1536,13 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         print("Numbers of events (!=1 neutrons): {} {} {}".format(*ev_nums))
         print("Numbers of events (1 neutron): {} {} {}".format(*ev_nums_1n))
     if not quiet:
+        nrelic = results_sys[lpos,6] if use_spall else results_sys[lpos,5] 
+        nspall = results_sys[lpos,5] if use_spall else 0 
         plotfit(results_sys[lpos,1], results_sys[lpos,2], results_sys[lpos,3],
-                results_sys[lpos,4], results_sys[lpos,5], results_sys[lpos,6], model, sknum,
+                results_sys[lpos,4], model, sknum,
                 elow, ehigh, elow_1n, samples=[samplow, sampmed, samphigh],
-                samples_n=samples_n, signal=signal, background=bgs_sk4, use_spall = use_spall)
+                samples_n=samples_n, signal=signal, background=bgs_sk4, use_spall = use_spall,
+               nrelic = nrelic, nspall = nspall)
         plt.savefig(f"{outdir}/fit_sk{sknum}.pdf")
         plt.clf()
     return limit * flux_fac, flux_fac, results_sys, pred_rate, pred_flux
