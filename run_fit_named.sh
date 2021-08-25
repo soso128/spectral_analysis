@@ -8,4 +8,4 @@ PY=/home/giampaol/miniconda3/envs/spectral/bin/python
 spectral_dir=/disk02/usr6/elhedri/spectral_analysis
 #spectral_dir=/disk02/usr6/giampaol/spectral/spectral_analysis
 cd $spectral_dir
-$PY fitlike.py $model $outdir
+$PY fitlike.py --sys 1 --thr 16 --thr1n 16 --spall 1 $model $outdir

@@ -157,11 +157,13 @@ class spall_sk():
             newbins, neweffs = list(bins) + [ehigh], list(effs) + [1.0]
         return newbins, neweffs
 
-    # TODO: make for all SK phases (not just SK-IV)
     def _get_func(self, sknum):
         spall_emax = 24
-        expcoeff = 1./7140.7
-        return lambda x: exp(-expcoeff*x**3.746) if x < spall_emax else 0
+        expcoeff = [3588.821, 1.60559875e5, 7768.694, 2181.575]
+        exppow = [3.49809, 4.554, 3.7738, 3.3457]
+        #exppow = [3.932, 4.650, 7.656, 3.746]
+        #return lambda x: exp(-x * 0.836311) if x < spall_emax else 0
+        return lambda x: exp(-(x**exppow[sknum - 1])/expcoeff[sknum - 1]) if x < spall_emax else 0
 
     def _get_norm0(self):
         ''' PDF normalization, before cuts '''
@@ -197,7 +199,7 @@ class spall_sk():
             raise ValueError("Energy (%0.2f) outside range (%0.2f-%0.2f)"
                              % (energy, self.elow, self.ehigh))
 
-    def pdf(self, energy, region, ntag):
+    def pdf(self, energy, region, ntag = 0):
         ''' Properly normalized pdf, after cuts '''
         try:
             self._check_valid_energy(energy)
@@ -355,6 +357,21 @@ class relic_sk:
                 area += quad(self._spectrum_after_cuts, self.elows[ntag],
                              self.ehigh, args=(region, ntag))[0]
         return 1.0 / area
+
+    def _get_ntag_sysfact(self):
+        ''' Get multiplying factor for ntag systematics on overall efficiency '''
+        area1 = 0
+        area2 = 0
+        for region in range(3):
+            area2 += quad(self._spectrum_after_cuts, self.elows[1],
+                         self.ehigh, args=(region, 1))[0]
+        area1 = quad(lambda x: sum(self.spec(x) * self.effs[0](x)
+                             * self.cherenkov_frac[r] 
+                             * self.nregions_frac[1][digitize(x, self.ntag_ebins) - 1]
+                             for r in range(3)), 
+                             self.elows[0], self.ehigh)[0]
+        return (area2- area1) * self.norm/self.norm0
+
 
     def overall_efficiency(self):
         ''' Cut efficiency within our energy region '''

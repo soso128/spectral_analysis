@@ -14,6 +14,7 @@ import matplotlib as mpl
 
 path.append("spectrum_generator/")
 import snspectrum as sns
+import get_flux_from_mc as gtmc
 import likes
 from pdf_sk4 import bg_sk4, relic_sk, spall_sk
 from esys_scale_res import esys
@@ -35,13 +36,13 @@ efftot = {"lma": [0.7975,0.56703,0.77969],
 fluxfac = {"lma": 0.535115, "malaney": 0.5845, "ksw": 0.488413,
            "faild": 0.431, "woosley": 0.47447}
 # Systematics for signal: reduction efficiency, livetime, Strumia-Vissani cross-section, FV
-sys_eff = array([0.0254, 0.0404, 0.0253, 0.0200])
+sys_eff = array([0.0254, 0.0404, 0.0253, 0.0220])
 sys_livetime = 0.001
 sys_xsec = 0.01
-sys_fv = array([0.013, 0.011, 0.010, 0.009])
+sys_fv = array([0.013, 0.011, 0.010, 0.015])
 sys_eff = sqrt(sys_eff**2 + sys_livetime**2 + sys_xsec**2 + sys_fv**2)
 # Ntag cut systematics from AmBe study for SK-IV
-sys_eff_sk4_ntag = 0.06
+sys_eff_sk4_ntag = 0.125
 
 # Definitions
 regionids = {"low": 0, "medium": 1, "high": 2}
@@ -70,8 +71,8 @@ effs_3rdred = [effsk1, effsk2, effsk3, effsk4]
 spaeff_sk1 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
 spaeff_sk2 = array([[17.5, 0.762], [20, 0.882], [26, 1.0]])
 spaeff_sk3 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
-spaeff_sk4_nontag = array([[12, 0.8], [16, 0.68], [18, 0.65], [20, 0.918], [24, 0.98]])
-spaeff_sk4 = array([[16, 0.826], [18, 0.889], [20, 0.918], [24, 0.98]])
+spaeff_sk4_nontag = array([[12, 0.8], [16, 0.65], [18, 0.63], [20, 0.918], [24, 0.98]])
+spaeff_sk4 = array([[16, 0.826], [18, 0.887], [20, 0.918], [24, 0.98]])
 spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4_nontag]
 
 soleff_sk1 = array([[16, 0.738], [17, 0.821], [18, 0.878],
@@ -80,22 +81,36 @@ soleff_sk2 = array([[17.5, 0.738], [18.02, 0.821], [19.08, 0.878],
                     [20.14, 0.965], [21.2, 1]])
 soleff_sk3 = array([[16, 0.738], [17, 0.821], [18, 0.878],
                     [19, 0.965], [20, 1]])
-soleff_sk4 = array([[16, 0.7226], [17, 0.8138], [18, 0.8718],
-                    [19, 0.965], [20, 1]])
+soleff_sk4 = array([[16, 0.731], [17, 0.822], [18, 0.883],
+                    [19, 0.966], [20, 1]])
 soleff = [soleff_sk1, soleff_sk2, soleff_sk3, soleff_sk4]
 
 # SK4 ntag efficiencies
 ntag_ebins = [12,14,16,18,20,22,24,26,28,90]
-bdt_cuts = [0.958,0.874,0.972,0.855,0.339,0.24,0.241,0.809,0.669]
+bdt_cuts = [0.958,0.874,0.964,0.855,0.129,0.129,0.241,0.669,0.620]
 emin, emax = ntag_ebins[0], ntag_ebins[-1]
-bdt_roc = genfromtxt('ROCs/roc_curve_N10gt5_cut6_nlow1_newsys_fakedata.roc')
+bdt_roc = genfromtxt('ROCs/roc_curve_N10gt5_cut6_nlow1.roc')
 cuts_roc, roc_effs, roc_bg = bdt_roc[:,0], bdt_roc[:,1], bdt_roc[:,2]
 ntag_eff = interp1d(cuts_roc, roc_effs)
 ntag_bg = interp1d(cuts_roc, roc_bg)
 ntag_effs = ntag_eff(bdt_cuts) #[eff(c) for c in bdt_cuts]
 ntag_bgs = ntag_bg(bdt_cuts) # [bg(c) for c in bdt_cuts]
-ntag_eff_ps = 0.455 # N10 > 5, 18-523 microsecs window
-ntag_bg_ps = 10.999 # N10 > 5, 18-523 microsecs window
+ntag_eff_ps = 0.447 # N10 > 5, 18-523 microsecs window
+ntag_bg_ps = 7.05 # N10 > 5, 18-523 microsecs window
+
+# Distorsion coefficients for spallation systematics
+spacoeffs_sk = array([[0.0105935649, -0.495682897, 7.93209842, -43.5523139],
+                     [0.0138280665, -0.749631175, 13.6659053, -83.7150281],
+                     [0.0438680847, -2.13974596, 35.1046340, -193.623584],
+                     [0.0103067195, -0.475915126, 7.52829430, -40.9820538]])
+#spacoeffs_sk = array([[0.0123007834, -0.579943766, 9.33104800, -51.3586273],
+                     #[0.0122423073, -0.665453703, 12.2007772, -75.3689846],
+                     #[0.0401672378, -1.94512194, 31.7340679, -174.369394],
+                     #[0.0121024891, -0.565396545, 9.02737234, -49.4163994]])
+#spacoeffs_sk = array([[0.0268777, -1.29806656, 21.162808, -116.5129],
+                     #[0.0135476, -0.7159959, 12.80619, -77.4774],
+                     #[0.0291259, -1.374243, 21.968258, -119.050657],
+                     #[0.0197376, -0.932184, 14.950667, -81.556668]])
 
 # Scalings between Cherenkov angle regions (from MC)
 mupi_rescale_low = [1.367, 1.75, 1.34, 1.34] # mupi from low to medium
@@ -154,7 +169,9 @@ def load_signal_pdf(sknum, model, elow, ehigh, elow_1n):
         spec0 = array([sns.ibd_spectrum_flux(ee, flux) for ee in en])
         spec, en = spec0[~isnan(spec0)], en[~isnan(spec0)] # remove undefined
         if smear:
-            _, spec = sns.smear_ibd_spectrum(en, column_stack((en, spec)), sknum)
+            specfunc = gtmc.smeared_spec_from_mc(en, spec, sknum, high)
+            spec = specfunc(en)
+            #_, spec = sns.smear_ibd_spectrum(en, column_stack((en, spec)), sknum)
         return en, spec
 
     def spec_params(mod, imf, csfr, low, high, smear=True):
@@ -164,7 +181,9 @@ def load_signal_pdf(sknum, model, elow, ehigh, elow_1n):
         spec0 = array([sns.ibd_spectrum(ee, mod, imf, csfr) for ee in en])
         spec, en = spec0[~isnan(spec0)], en[~isnan(spec0)] # remove undefined
         if smear:
-            _, spec = sns.smear_ibd_spectrum(en, column_stack((en, spec)), sknum)
+            specfunc = gtmc.smeared_spec_from_mc(en, spec, sknum, high)
+            spec = specfunc(en)
+            #_, spec = sns.smear_ibd_spectrum(en, column_stack((en, spec)), sknum)
         return en, spec
 
     def tot_rate(en_full, spec_full, low, high, ntag=None, nfracs=None):
@@ -596,7 +615,7 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
     for (0 | >1) neutron region and 1 neutron region respectively.
     '''
 
-    def pdfnorm(pdf_id, region_id, ntag=None):
+    def pdfnorm(pdf_id, region_id, eup = ehigh, ntag=None):
         ''' Calculate PDF norm for given region.
         sk4: if None is given as region, sum over regions
         '''
@@ -608,46 +627,48 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
         if sknum == 4:
             if region_id is not None and ntag is not None:
                 if ntag:
-                    return quad(pdf_en(region_id, ntag), elow_1n, ehigh)[0]
+                    return quad(pdf_en(region_id, ntag), elow_1n, eup)[0]
                 else:
-                    return quad(pdf_en(region_id, ntag), elow, ehigh)[0]
+                    return quad(pdf_en(region_id, ntag), elow, eup)[0]
             elif region_id is not None:
-                norm = quad(pdf_en(region_id, False), elow, ehigh)[0]
-                norm += quad(pdf_en(region_id, True), elow_1n, ehigh)[0]
+                norm = quad(pdf_en(region_id, False), elow, eup)[0]
+                norm += quad(pdf_en(region_id, True), elow_1n, eup)[0]
                 return norm
             elif ntag is not None:
                 if ntag:
-                    norm = [quad(pdf_en(rid, ntag), elow_1n, ehigh)[0]
+                    norm = [quad(pdf_en(rid, ntag), elow_1n, eup)[0]
                             for rid in range(len(regionids))]
                 else:
-                    norm = [quad(pdf_en(rid, ntag), elow, ehigh)[0]
+                    norm = [quad(pdf_en(rid, ntag), elow, eup)[0]
                             for rid in range(len(regionids))]
                 return sum(norm)
             else:
-                norm_1n = [quad(pdf_en(rid, True), elow_1n, ehigh)[0]
+                norm_1n = [quad(pdf_en(rid, True), elow_1n, eup)[0]
                            for rid in range(len(regionids))]
-                norm_other = [quad(pdf_en(rid, False), elow, ehigh)[0]
+                norm_other = [quad(pdf_en(rid, False), elow, eup)[0]
                               for rid in range(len(regionids))]
                 return sum(norm_1n) + sum(norm_other)
         else:
-            return quad(pdf_en(region_id), elow, ehigh)[0]
+            return quad(pdf_en(region_id), elow, eup)[0]
 
-    def pdfmoment(pdf_id, region_id, order = 1):
+    def pdfmoment(pdf_id, region_id, eup = ehigh, order = 1):
         ''' First moment of PDF for given Cherenkov region '''
         def integrand(ntag=None):
             return lambda en: en**order * pdf(en, sknum, model, elow, pdf_id,
                                         region_id, ntag, backgrounds)
         if sknum < 4:
-            return quad(integrand(), elow, ehigh)[0]
+            return quad(integrand(), elow, eup)[0]
         else:
-            moment = quad(integrand(ntag=True), elow_1n, ehigh)[0]
-            moment += quad(integrand(ntag=False), elow, ehigh)[0]
+            moment = quad(integrand(ntag=True), elow_1n, eup)[0]
+            moment += quad(integrand(ntag=False), elow, eup)[0]
             return moment
 
     # CC distortion sigmas
     sigmas = arange(-1, 3.5, 0.5)
     numbkg = 5 if use_spall else 4
-    spacoeffs = [0.05485892, 1.67346126 , 12.60970234]
+    #spacoeffs = [0.02517, -1.69954 , 43.08233, -485.46063, 2050.978 - 1]
+    #spacoeffs = [0.0198, -0.4659 , 2.2375]
+    spacoeffs = spacoeffs_sk[sknum - 1]
     if sknum < 4:
         assert energies_n is None
         assert len(energies) == 2
@@ -673,12 +694,24 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
         # Correction factors for spallation
         if use_spall:
             sigmas3 = arange(-2, 2.5, 0.5)
-            norm0 = pdfnorm(pdfids['spall'], regionids['medium'])
-            norm1 = pdfmoment(pdfids['spall'], regionids['medium'])
-            norm2 = pdfmoment(pdfids['spall'], regionids['medium'], order = 2)
-            normspa = 1./(1 + sigmas3 * (spacoeffs[0] * norm2 - spacoeffs[1] * norm1 + spacoeffs[2] * norm0))
-            spafact = normspa * (1 + sigmas3[newaxis,:] * (spacoeffs[0] * energies_med[:, newaxis]**2 
-                                                           - spacoeffs[1] * energies_med[:, newaxis] + spacoeffs[2]))
+            spafact = (1 + sigmas3[newaxis,:] * (spacoeffs[0] * energies_med[:, newaxis]**3
+                                                    + spacoeffs[1] * energies_med[:, newaxis]**2 
+                                                           + spacoeffs[2] * energies_med[:, newaxis] + spacoeffs[3]))
+            max_pos_energies = []
+            for sf in spafact.T:
+                if (sf < 0).sum():
+                    en = sorted(energies_med[sf < 0])[0]
+                    max_pos_energies.append(sorted(energies_med[energies_med < en])[-1])
+                else:
+                    max_pos_energies.append(ehigh)
+            max_pos_energies = array(max_pos_energies)
+            #max_pos_energies = array([sorted(energies_med[energies_med < sorted(energies_med[sf < 0])[0]])[-1] for sf in spafact.T])
+            norm0 = array([pdfnorm(pdfids['spall'], regionids['medium'], eup = mpe) for mpe in max_pos_energies])
+            norm1 = array([pdfmoment(pdfids['spall'], regionids['medium'], eup = mpe) for mpe in max_pos_energies])
+            norm2 = array([pdfmoment(pdfids['spall'], regionids['medium'], eup = mpe, order = 2) for mpe in max_pos_energies])
+            norm3 = array([pdfmoment(pdfids['spall'], regionids['medium'], eup = mpe, order = 3) for mpe in max_pos_energies])
+            normspa = 1./(norm0 + sigmas3 * (spacoeffs[0] * norm3 + spacoeffs[1] * norm2 + spacoeffs[2] * norm1 + spacoeffs[3] * norm0))
+            spafact = where(spafact < 0, 1e-10, spafact) * normspa # Cut off pdfs when they go negative
 
             # make systematics tensors (Nenergies x Npdfs x Nsigmas x Nsigmas2)
             sysmatrix_med = ones((len(energies_med), numbkg + 1, len(sigmas), len(sigmas2), len(sigmas3)))
@@ -736,12 +769,31 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
 
         if use_spall:
             sigmas4 = arange(-2, 2.5, 0.5)
-            norm0 = pdfnorm(pdfids['spall'], regionids['medium'])
-            norm1 = pdfmoment(pdfids['spall'], regionids['medium'])
-            norm2 = pdfmoment(pdfids['spall'], regionids['medium'], order = 2)
-            normspa = 1./(1 + sigmas4 * (spacoeffs[0] * norm2 - spacoeffs[1] * norm1 + spacoeffs[2] * norm0))
-            epoly =(spacoeffs[0] * energies_med**2 - spacoeffs[1] * energies_med + spacoeffs[2]) 
-            spafact = normspa * (1 + sigmas4[newaxis,:] * epoly[:, newaxis])
+            #norm0 = pdfnorm(pdfids['spall'], regionids['medium'])
+            #norm1 = pdfmoment(pdfids['spall'], regionids['medium'])
+            #norm2 = pdfmoment(pdfids['spall'], regionids['medium'], order = 2)
+            #normspa = 1./(1 + sigmas4 * (spacoeffs[0] * norm2 - spacoeffs[1] * norm1 + spacoeffs[2] * norm0))
+            #epoly =(spacoeffs[0] * energies_med**2 - spacoeffs[1] * energies_med + spacoeffs[2]) 
+            #spafact = normspa * (1 + sigmas4[newaxis,:] * epoly[:, newaxis])
+            spafact = (1 + sigmas4[newaxis,:] * (spacoeffs[0] * energies_med[:, newaxis]**3
+                                                    + spacoeffs[1] * energies_med[:, newaxis]**2 
+                                                           + spacoeffs[2] * energies_med[:, newaxis] + spacoeffs[3]))
+            max_pos_energies = []
+            for sf in spafact.T:
+                if (sf < 0).sum():
+                    en = sorted(energies_med[sf < 0])[0]
+                    max_pos_energies.append(sorted(energies_med[energies_med < en])[-1])
+                else:
+                    max_pos_energies.append(ehigh)
+            max_pos_energies = array(max_pos_energies)
+            #max_pos_energies = array([sorted(energies_med[energies_med < sorted(energies_med[sf < 0])[0]])[-1] if (sf < 0).sum()
+                                      #else ehigh for sf in spafact.T])
+            norm0 = array([pdfnorm(pdfids['spall'], regionids['medium'], eup = mpe) for mpe in max_pos_energies])
+            norm1 = array([pdfmoment(pdfids['spall'], regionids['medium'], eup = mpe) for mpe in max_pos_energies])
+            norm2 = array([pdfmoment(pdfids['spall'], regionids['medium'], eup = mpe, order = 2) for mpe in max_pos_energies])
+            norm3 = array([pdfmoment(pdfids['spall'], regionids['medium'], eup = mpe, order = 3) for mpe in max_pos_energies])
+            normspa = 1./(norm0 + sigmas4 * (spacoeffs[0] * norm3 + spacoeffs[1] * norm2 + spacoeffs[2] * norm1 + spacoeffs[3] * norm0))
+            spafact = where(spafact < 0, 1e-10, spafact)*normspa # Cut off pdfs when they go negative
 
             # make systematics tensors (Nen x Npdfs x Nsig x Nsig2 x Nsig3 x Nsig4)
             sys_shape_low = (len(energies_low), numbkg + 1,
@@ -1120,18 +1172,21 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, elow, ehigh, elow_1n,
         relic = nrelic * array([pdf(ee, sknum, model, elow, pdfids['rel'], region,
                                     ntag=ntag,signal=signal) for ee in en])
         ax.plot(en, step*nuecc, label = r"$\nu_e$ CC")
-        ax.plot(en, step*nc, label = "NC")
-        ax.plot(en, step*numucc, label = r"$Decay e^-$")
+        ax.plot(en, step*nc, label = "NCQE")
+        ax.plot(en, step*numucc, label = r"Decay $e^-$")
         ax.plot(en, step*mupi, label = r"$\mu/\pi$")
         if use_spall: ax.plot(en, step*spall, label = r"Spallation")
-        ax.plot(en, step*relic, label = "relic")
-        if use_spall: ax.plot(en, step*(mupi + nc + numucc + nuecc + spall), label = "all backgrounds")
-        else: ax.plot(en, step*(mupi + nc + numucc + nuecc), label = "all backgrounds")
+        if model == "horiuchi":
+            ax.plot(en, step*relic, label = "DSNB (Horiuchi+09)")
+        else:
+            ax.plot(en, step*relic, label = "DSNB")
+        if use_spall: ax.plot(en, step*(mupi + nc + numucc + nuecc + spall), label = "All backgrounds")
+        else: ax.plot(en, step*(mupi + nc + numucc + nuecc), label = "All backgrounds")
         h = histogram(data, bins = arange(elow, ehigh,step))
         x = h[1][1:] - 0.5 * (h[1][1:] - h[1][:-1])
         ax.errorbar(x, h[0], xerr = step/2, yerr = sqrt(h[0]), fmt = '.', color = 'black')
         if ax.is_first_col():
-            ax.legend(loc='upper left', prop={'size': 12})
+            ax.legend(loc='upper left', prop={'size': 11})
             if ntag is None:
                 ax.set(ylabel="Number of events after cuts")
             elif ntag:
@@ -1139,12 +1194,12 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, elow, ehigh, elow_1n,
             else:
                 ax.set(ylabel="Number of events after cuts\n0 / >1 neutron tags")
         if ax.is_first_row():
-            titles = [r"Sideband (20 < $\Theta_C$ < 38)",
-                      r"Signal region (38 < $\Theta_C$ < 50)",
-                      r"Sideband (78 < $\Theta_C$ < 90)"]
+            titles = [r"Sideband (20$^\circ$ < $\Theta_C$ < 38$^\circ$)",
+                      r"Signal region (38$^\circ$ < $\Theta_C$ < 50$^\circ$)",
+                      r"Sideband (78$^\circ$ < $\Theta_C$ < 90$^\circ$)"]
             ax.set(title=titles[region])
             ax.title.set_fontsize(10)
-        ax.set(xlabel = "E$_p$ (MeV)")
+        ax.set(xlabel = "E$_\\mathrm{rec}$ (MeV)")
 
     plt.style.use("seaborn")
     if sknum < 4:
@@ -1289,10 +1344,10 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                                 [low_1n, med_1n, high_1n], sys=-1)
         return likemax
 
-    def applysys(likes, eff, rmin, rmax, rstep):
+    def applysys(likes, eff, rmin, rmax, rstep, sysfact = 0):
         ''' Apply gaussian systematic efficiency error correction'''
         print(f"Signal efficiency is {eff}")
-        syseff = sys_eff[sknum - 1]
+        syseff = sqrt(sys_eff[sknum - 1]**2 + sysfact**2 * sys_eff_sk4_ntag**2)
         lower = max(eff * (1 - 6*syseff), 1e-10)
         upper = min(eff * (1 + 6*syseff), 0.999)
         step = (upper - lower)/1000.
@@ -1332,6 +1387,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
     bgs_sk4 = None
     bg_sk4_dir = "./pdf_bg_sk4"
     effsignal = signal.overall_efficiency_16_90() # Always use calculated eff.
+    ntag_sys_fact = signal._get_ntag_sysfact() if sknum >= 4 else 0
     # Load background pdfs
     # WARNING!!! 16 MeV threshold is hardcoded there!
     cut_bins_ntag, cut_effs_ntag = get_spasolbins(ntag=True)
@@ -1365,6 +1421,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         soleffs = soleff[sknum - 1][:, 1]
         bgs_sk4 += [spall_sk(solbins, soleffs, effs_3rdred[sknum - 1], sknum, elow, ehigh=ehigh)]
     print(f"Efficiency is {effsignal}")
+    if sknum == 4: print(f"Factor for ntag systematics is {ntag_sys_fact}")
 
     # Get pdfs. PDF matrices: (Nen x Npdf)
     pdfs_high = get_pdfmatrix(samphigh, "high", ntag=False,
@@ -1506,7 +1563,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
 
     # Systematic efficiency error correction + limits
     _, best2, errplus2, errminus2, limit2 = analyse(results)
-    results_sys = applysys(results, effsignal, rmin, rmax, rstep)
+    results_sys = applysys(results, effsignal, rmin, rmax, rstep, ntag_sys_fact)
     _, best, errplus, errminus, limit = analyse(results_sys, final=True)
 
     flux_best = best * flux_fac
@@ -1687,10 +1744,10 @@ if __name__ == "__main__":
         livetimes[3] = args.lt
         sk4like(modelname, elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
             outdir=directory, toydir=toy_data_dir, systematics=systematics,
-            skgd_conc=args.gd, use_spall = args.spall)
+            skgd_conc=args.gd, use_spall = args.spall, quiet = quiet)
 
     else:
         quiet = False
         fullike(modelname, elow=16, ehigh=90, elow_sk2=17.5,
             elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
-            outdir=directory, systematics=systematics, use_spall = args.spall)
+            outdir=directory, systematics=systematics, use_spall = args.spall, quiet = quiet)
