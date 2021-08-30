@@ -18,6 +18,7 @@ import get_flux_from_mc as gtmc
 import likes
 from pdf_sk4 import bg_sk4, relic_sk, spall_sk
 from esys_scale_res import esys
+from esys_pdf_distorsions import get_distorsion_functions
 
 mpl.rcParams['font.size'] = 15
 
@@ -111,6 +112,11 @@ spacoeffs_sk = array([[0.0105935649, -0.495682897, 7.93209842, -43.5523139],
                      #[0.0135476, -0.7159959, 12.80619, -77.4774],
                      #[0.0291259, -1.374243, 21.968258, -119.050657],
                      #[0.0197376, -0.932184, 14.950667, -81.556668]])
+
+# Dictionaries for energy scale and resolution systematics
+# For SK >= 4 (others are hardcoded, from K. Bays 2012 analysis)
+esys_scale_dict = {}
+esys_res_dict = {}
 
 # Scalings between Cherenkov angle regions (from MC)
 mupi_rescale_low = [1.367, 1.75, 1.34, 1.34] # mupi from low to medium
@@ -369,7 +375,7 @@ def systematics_escale_res(energies, sknum, model, elow, ehigh, elow_1n=None,
             ''' times systematics size '''
             return lambda en: pdf(en, sknum, model, elow, pdf_id,
                                   region_id, ntag, backgrounds, signal) * esys(
-                                      en, sknum, region_id, pdf_id)
+                                      en, sknum, region_id, pdf_id, esys_scale_dict, esys_res_dict, ntag)
 
         if sknum == 4:
             if region_id is not None and ntag is not None:
@@ -425,18 +431,18 @@ def systematics_escale_res(energies, sknum, model, elow, ehigh, elow_1n=None,
     ncnorm = pdfnorm(pdfids['nc'],None)
     mupinorm = pdfnorm(pdfids['mupi'],None)
     relicnorm = pdfnorm(pdfids['rel'],None)
-    relicfact_low = (1 + esys(energies_low,sknum,0,pdfids['rel'])[:, newaxis] * sigmas[newaxis, :])/(1 + relicnorm * sigmas[newaxis, :])
-    relicfact_med = (1 + esys(energies_med,sknum,1,pdfids['rel'])[:, newaxis] * sigmas[newaxis, :])/(1 + relicnorm * sigmas[newaxis, :])
-    relicfact_high = (1 + esys(energies_high,sknum,2,pdfids['rel'])[:, newaxis] * sigmas[newaxis, :])/(1 + relicnorm * sigmas[newaxis, :])
-    nuefact_low = (1 + esys(energies_low,sknum,0,pdfids['nue'])[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
-    nuefact_med = (1 + esys(energies_med,sknum,1,pdfids['nue'])[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
-    nuefact_high = (1 + esys(energies_high,sknum,2,pdfids['nue'])[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
-    ncfact_low = (1 + esys(energies_low,sknum,0,pdfids['nc'])[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
-    ncfact_med = (1 + esys(energies_med,sknum,1,pdfids['nc'])[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
-    ncfact_high = (1 + esys(energies_high,sknum,2,pdfids['nc'])[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
-    mupifact_low = (1 + esys(energies_low,sknum,0,pdfids['mupi'])[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
-    mupifact_med = (1 + esys(energies_med,sknum,1,pdfids['mupi'])[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
-    mupifact_high = (1 + esys(energies_high,sknum,2,pdfids['mupi'])[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
+    relicfact_low = (1 + esys(energies_low,sknum,0,pdfids['rel'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + relicnorm * sigmas[newaxis, :])
+    relicfact_med = (1 + esys(energies_med,sknum,1,pdfids['rel'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + relicnorm * sigmas[newaxis, :])
+    relicfact_high = (1 + esys(energies_high,sknum,2,pdfids['rel'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + relicnorm * sigmas[newaxis, :])
+    nuefact_low = (1 + esys(energies_low,sknum,0,pdfids['nue'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
+    nuefact_med = (1 + esys(energies_med,sknum,1,pdfids['nue'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
+    nuefact_high = (1 + esys(energies_high,sknum,2,pdfids['nue'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
+    ncfact_low = (1 + esys(energies_low,sknum,0,pdfids['nc'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
+    ncfact_med = (1 + esys(energies_med,sknum,1,pdfids['nc'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
+    ncfact_high = (1 + esys(energies_high,sknum,2,pdfids['nc'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
+    mupifact_low = (1 + esys(energies_low,sknum,0,pdfids['mupi'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
+    mupifact_med = (1 + esys(energies_med,sknum,1,pdfids['mupi'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
+    mupifact_high = (1 + esys(energies_high,sknum,2,pdfids['mupi'], esys_scale_dict, esys_res_dict)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
 
     #relicfact = relicfact[:, :, newaxis]
     #nuefact = nuefact[:, :, newaxis]
@@ -462,35 +468,31 @@ def systematics_escale_res(energies, sknum, model, elow, ehigh, elow_1n=None,
     sysmatrix_low[:, pdfids["mupi"], :] = mupifact_low
     sysmatrix_low[:, relic_column, :] = relicfact_low
 
-    if use_spall:
-        spallnorm = pdfnorm(pdfids['spall'],None)
-        spallfact_low = (1 + esys(energies_low,sknum,0,pdfids['spall'])[:, newaxis] * sigmas[newaxis, :])/(1 + spallnorm * sigmas[newaxis, :])
-        spallfact_med = (1 + esys(energies_med,sknum,1,pdfids['spall'])[:, newaxis] * sigmas[newaxis, :])/(1 + spallnorm * sigmas[newaxis, :])
-        spallfact_high = (1 + esys(energies_high,sknum,2,pdfids['spall'])[:, newaxis] * sigmas[newaxis, :])/(1 + spallnorm * sigmas[newaxis, :])
-        sysmatrix_low[:, pdfids["spall"], :] = spallfact_low
-        sysmatrix_med[:, pdfids["spall"], :] = spallfact_med
-        sysmatrix_high[:, pdfids["spall"], :] = spallfact_high
-
     if sknum == 4:
         assert energies_n is not None
         assert len(energies) == len(energies_n) == 3
         energies_low_n, energies_med_n, energies_high_n = energies_n  
 
-        sys_shape_low_1n = (len(energies_low_n),) + sys_shape_low[1:]
-        sys_shape_med_1n = (len(energies_med_n),) + sys_shape_low[1:]
+        sys_shape_low_1n = (len(energies_low_n), numbkg + 1, len(sigmas))
         sys_shape_high_1n = (len(energies_high_n),) + sys_shape_low[1:]
+        sys_shape_med_1n = (len(energies_med_n),) + sys_shape_low[1:]
 
         sysmatrix_low_1n = ones(sys_shape_low_1n)
         sysmatrix_med_1n = ones(sys_shape_med_1n)
         sysmatrix_high_1n = ones(sys_shape_high_1n)
 
-        relicfact_1n = (1 + esys(energies_med_n,sknum,1,pdfids['rel'])[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
-        nuefact_1n = (1 + esys(energies_med_n,sknum,1,0)[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
-        ncfact_1n_med = (1 + esys(energies_med_n,sknum,1,pdfids['nc'])[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
-        ncfact_1n_high = (1 + esys(energies_high_n,sknum,2,pdfids['nc'])[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
-        mupifact_1n_low = (1 + esys(energies_low_n,sknum,0,pdfids['mupi'])[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
-        mupifact_1n_med = (1 + esys(energies_med_n,sknum,1,pdfids['mupi'])[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
-        mupifact_1n_high = (1 + esys(energies_high_n,sknum,2,pdfids['mupi'])[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
+        relicfact_low_1n = (1 + esys(energies_low_n,sknum,0,pdfids['rel'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + relicnorm * sigmas[newaxis, :])
+        relicfact_med_1n = (1 + esys(energies_med_n,sknum,1,pdfids['rel'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + relicnorm * sigmas[newaxis, :])
+        relicfact_high_1n = (1 + esys(energies_high_n,sknum,2,pdfids['rel'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + relicnorm * sigmas[newaxis, :])
+        nuefact_low_1n = (1 + esys(energies_low_n,sknum,0,pdfids['nue'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
+        nuefact_med_1n = (1 + esys(energies_med_n,sknum,1,pdfids['nue'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
+        nuefact_high_1n = (1 + esys(energies_high_n,sknum,2,pdfids['nue'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + nuenorm * sigmas[newaxis, :])
+        ncfact_low_1n = (1 + esys(energies_low_n,sknum,0,pdfids['nc'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
+        ncfact_med_1n = (1 + esys(energies_med_n,sknum,1,pdfids['nc'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
+        ncfact_high_1n = (1 + esys(energies_high_n,sknum,2,pdfids['nc'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + ncnorm * sigmas[newaxis, :])
+        mupifact_low_1n = (1 + esys(energies_low_n,sknum,0,pdfids['mupi'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
+        mupifact_med_1n = (1 + esys(energies_med_n,sknum,1,pdfids['mupi'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
+        mupifact_high_1n = (1 + esys(energies_high_n,sknum,2,pdfids['mupi'], esys_scale_dict, esys_res_dict, ntag = True)[:, newaxis] * sigmas[newaxis, :])/(1 + mupinorm * sigmas[newaxis, :])
 
         #relicfact_1n = relicfact_1n[:, :, newaxis]
         #nuefact_1n = nuefact_1n[:, :, newaxis]
@@ -500,20 +502,21 @@ def systematics_escale_res(energies, sknum, model, elow, ehigh, elow_1n=None,
         #mupifact_1n_med = mupifact_1n_med[:, :, newaxis]
         #mupifact_1n_high = mupifact_1n_high[:, :, newaxis]
 
-        sysmatrix_med_1n[:, pdfids["nue"], :] = nuefact_1n
-        sysmatrix_med_1n[:, pdfids["nc"], :] = ncfact_1n_med
-        sysmatrix_med_1n[:, pdfids["mupi"], :] = mupifact_1n_med
-        sysmatrix_med_1n[:, pdfids["rel"], :] = relicfact_1n
+        relic_column = pdfids['rel'] if use_spall else pdfids['rel'] - 1
+        sysmatrix_med_1n[:, pdfids["nue"], :] = nuefact_med_1n
+        sysmatrix_med_1n[:, pdfids["nc"], :] = ncfact_med_1n
+        sysmatrix_med_1n[:, pdfids["mupi"], :] = mupifact_med_1n
+        sysmatrix_med_1n[:, relic_column, :] = relicfact_med_1n
 
-        sysmatrix_high_1n[:, pdfids["nc"], :] = ncfact_1n_high
-        sysmatrix_high_1n[:, pdfids["mupi"], :] = mupifact_1n_high
+        sysmatrix_high_1n[:, pdfids["nue"], :] = nuefact_high_1n
+        sysmatrix_high_1n[:, pdfids["nc"], :] = ncfact_high_1n
+        sysmatrix_high_1n[:, pdfids["mupi"], :] = mupifact_high_1n
+        sysmatrix_high_1n[:, relic_column, :] = relicfact_high_1n
 
-        sysmatrix_low_1n[:, pdfids["mupi"], :] = mupifact_1n_low
-
-        if use_spall:
-            spallnorm = pdfnorm(pdfids['spall'],None)
-            spallfact_med = (1 + esys(energies_med,sknum,1,pdfids['spall'])[:, newaxis] * sigmas[newaxis, :])/(1 + spallnorm * sigmas[newaxis, :])
-            sysmatrix_med_1n[:, pdfids["spall"], :] = spallfact_med
+        sysmatrix_low_1n[:, pdfids["nue"], :] = nuefact_low_1n
+        sysmatrix_low_1n[:, pdfids["nc"], :] = ncfact_low_1n
+        sysmatrix_low_1n[:, pdfids["mupi"], :] = mupifact_low_1n
+        sysmatrix_low_1n[:, relic_column, :] = relicfact_low_1n
 
     sysm = sysmatrix_low, sysmatrix_med, sysmatrix_high
     sysm_1n = sysmatrix_low_1n, sysmatrix_med_1n, sysmatrix_high_1n
@@ -1100,7 +1103,7 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0, use_spall = False):
         totmax = totlike.max()
         gauss = exp(-arange(-4,4.5,0.5)**2/2)
         gauss /= gauss.sum()
-        likenew = log(exp(totlike - totmax) * gauss).sum() + totmax
+        likenew = log((exp(totlike - totmax) * gauss).sum()) + totmax
         return likenew
 
     if sys == 3:
@@ -1525,6 +1528,12 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                     pdfs_med_n = pdfs_med_n[...,newaxis,newaxis,newaxis] * sysmatrix_med_1n
                     pdfs_low_n = pdfs_low_n[...,newaxis,newaxis,newaxis] * sysmatrix_low_1n
             if systematics == 2:
+                # Get distorsion factors
+                print("Getting distorsion factors for all spectra...")
+                global esys_scale_dict, esys_res_dict
+                esys_scale_dict, esys_res_dict = get_distorsion_functions(elow, ehigh, elow_1n, bgs_sk4, signal, sknum)
+                print("Done")
+                # Get distorsion matrices
                 sysmatrices = systematics_escale_res([samplow, sampmed, samphigh], sknum,
                                         model, elow, ehigh, elow_1n=elow_1n,
                                         backgrounds=bgs_sk4, signal = signal,
