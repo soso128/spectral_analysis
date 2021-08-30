@@ -44,7 +44,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -87,7 +87,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -126,7 +126,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -165,7 +165,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -205,7 +205,7 @@ using namespace std;
     if (*e > 18. && *e <= 24.) {
 	*value = spallhigh * c_ * fit;
     }
-    if (*e > 16. && *e <= 18.) {
+    if (*e >= 16. && *e <= 18.) {
 	*value = spalllow * c_ * fit;
     }
     return 0;
@@ -243,7 +243,7 @@ using namespace std;
     if (*e > 18. && *e <= 24.) {
 	*value = spallhigh * c_ * fit;
     }
-    if (*e > 16. && *e <= 18.) {
+    if (*e >= 16. && *e <= 18.) {
 	*value = spalllow * c_ * fit;
     }
     return 0;
@@ -276,7 +276,7 @@ using namespace std;
     if (*e > 18. && *e <= 24.) {
 	*value = spallhigh * c_ * fit;
     }
-    if (*e > 16. && *e <= 18.) {
+    if (*e >= 16. && *e <= 18.) {
 	*value = spalllow * c_ * fit;
     }
     return 0;
@@ -312,7 +312,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -346,7 +346,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -380,7 +380,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -414,7 +414,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -448,7 +448,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -483,7 +483,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -523,7 +523,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -557,7 +557,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -595,7 +595,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -633,7 +633,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -668,7 +668,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -706,7 +706,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -742,7 +742,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -777,7 +777,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -811,7 +811,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -846,7 +846,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -880,7 +880,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -915,7 +915,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -963,7 +963,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1009,7 +1009,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1057,7 +1057,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1099,7 +1099,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1151,7 +1151,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1202,7 +1202,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1251,7 +1251,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1291,7 +1291,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1328,7 +1328,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1366,7 +1366,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1403,7 +1403,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1440,7 +1440,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1477,7 +1477,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1521,7 +1521,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1562,7 +1562,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1603,7 +1603,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1644,7 +1644,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1685,7 +1685,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1726,7 +1726,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1766,7 +1766,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1803,7 +1803,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1841,7 +1841,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1878,7 +1878,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1915,7 +1915,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1952,7 +1952,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -1996,7 +1996,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2034,7 +2034,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2072,7 +2072,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2124,7 +2124,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2170,7 +2170,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2217,7 +2217,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2258,7 +2258,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2292,7 +2292,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2327,7 +2327,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2366,7 +2366,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2400,7 +2400,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2435,7 +2435,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2476,7 +2476,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2511,7 +2511,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2549,7 +2549,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2587,7 +2587,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2621,7 +2621,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2659,7 +2659,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2697,7 +2697,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2731,7 +2731,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2765,7 +2765,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2799,7 +2799,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2833,7 +2833,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2867,7 +2867,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2911,7 +2911,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2954,7 +2954,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -2997,7 +2997,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3041,7 +3041,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3084,7 +3084,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3127,7 +3127,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3171,7 +3171,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3214,7 +3214,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3257,7 +3257,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3301,7 +3301,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3344,7 +3344,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3387,7 +3387,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3431,7 +3431,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3474,7 +3474,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3517,7 +3517,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3561,7 +3561,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3604,7 +3604,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3647,7 +3647,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3694,7 +3694,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3737,7 +3737,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3780,7 +3780,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3824,7 +3824,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3867,7 +3867,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3910,7 +3910,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3954,7 +3954,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -3999,7 +3999,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4042,7 +4042,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4086,7 +4086,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4132,7 +4132,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4175,7 +4175,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4219,7 +4219,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4264,7 +4264,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4307,7 +4307,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4351,7 +4351,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4396,7 +4396,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4439,7 +4439,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4483,7 +4483,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4528,7 +4528,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4571,7 +4571,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -4620,7 +4620,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -4666,7 +4666,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -4712,7 +4712,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -4759,7 +4759,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -4805,7 +4805,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -4851,7 +4851,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -4898,7 +4898,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -4944,7 +4944,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -4990,7 +4990,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5037,7 +5037,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5083,7 +5083,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5129,7 +5129,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5176,7 +5176,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5222,7 +5222,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5268,7 +5268,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5315,7 +5315,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5361,7 +5361,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5407,7 +5407,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5454,7 +5454,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5500,7 +5500,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5546,7 +5546,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5593,7 +5593,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5639,7 +5639,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5685,7 +5685,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5732,7 +5732,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5780,7 +5780,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5826,7 +5826,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5873,7 +5873,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5921,7 +5921,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -5967,7 +5967,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -6014,7 +6014,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -6062,7 +6062,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -6108,7 +6108,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -6155,7 +6155,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -6203,7 +6203,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -6249,7 +6249,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -6296,7 +6296,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -6344,7 +6344,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -6390,7 +6390,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -6436,7 +6436,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6479,7 +6479,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6522,7 +6522,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6566,7 +6566,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6609,7 +6609,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6652,7 +6652,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6696,7 +6696,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6739,7 +6739,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6782,7 +6782,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6826,7 +6826,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6869,7 +6869,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6912,7 +6912,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6956,7 +6956,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -6999,7 +6999,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7042,7 +7042,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7086,7 +7086,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7129,7 +7129,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7172,7 +7172,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7216,7 +7216,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7259,7 +7259,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7302,7 +7302,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7346,7 +7346,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7389,7 +7389,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7432,7 +7432,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7476,7 +7476,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7521,7 +7521,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7564,7 +7564,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7608,7 +7608,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7654,7 +7654,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7697,7 +7697,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7741,7 +7741,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7786,7 +7786,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7829,7 +7829,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7873,7 +7873,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7919,7 +7919,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -7962,7 +7962,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8006,7 +8006,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8051,7 +8051,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8094,7 +8094,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8139,7 +8139,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8185,7 +8185,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8228,7 +8228,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8273,7 +8273,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8319,7 +8319,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -8368,7 +8368,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -8411,7 +8411,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8456,7 +8456,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8501,7 +8501,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8547,7 +8547,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -8590,7 +8590,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8636,7 +8636,7 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
@@ -8684,7 +8684,7 @@ using namespace std;
     if (*e > 18.02f && *e <= 19.08f) {
 	*value = spalllow * c_ * s18 * fit;
     }
-    if (*e > 17.5f && *e <= 18.02f) {
+    if (*e >= 17.5f && *e <= 18.02f) {
 	*value = spalllow * c_ * s17 * fit;
     }
     return 0;
@@ -8727,16 +8727,22 @@ using namespace std;
     if (*e > 17. && *e <= 18.) {
 	*value = spalllow * c_ * s17 * fit;
     }
-    if (*e > 16. && *e <= 17.) {
+    if (*e >= 16. && *e <= 17.) {
 	*value = spalllow * c_ * s16 * fit;
     }
     return 0;
 } /* pdf_woos_sk3_med_ */
 
+double pdftemp(double en){
+    double val;
+    pdf8_sk1_med_(&en, &val);
+    return val;
+}
+
 
 double pdf(double en, int sknum, int model, double elow, int ev_type, int region){
     if (model > 0 && ev_type == 4){
-        cout << "Model " << model << " not implemented!" << endl;
+        //cout << "Model " << model << " not implemented!" << endl;
     }
     double val = 0;
     // Relic
@@ -8756,6 +8762,74 @@ double pdf(double en, int sknum, int model, double elow, int ev_type, int region
                 if (region == 0) pdf_rel_sk3_low_(&en, &val);
                 if (region == 1) pdf_rel_sk3_med_(&en, &val);
                 if (region == 2) pdf_rel_sk3_high_(&en, &val);
+            }
+        }
+        if (model == 8){
+            if (sknum == 1){
+                if (region == 0) pdf8_sk1_low_(&en, &val);
+                if (region == 1) pdf8_sk1_med_(&en, &val);
+                if (region == 2) pdf8_sk1_high_(&en, &val);
+            }
+            if (sknum == 2){
+                if (region == 0) pdf8_sk2_low_(&en, &val);
+                if (region == 1) pdf8_sk2_med_(&en, &val);
+                if (region == 2) pdf8_sk2_high_(&en, &val);
+            }
+            if (sknum == 3){
+                if (region == 0) pdf8_sk3_low_(&en, &val);
+                if (region == 1) pdf8_sk3_med_(&en, &val);
+                if (region == 2) pdf8_sk3_high_(&en, &val);
+            }
+        }
+        if (model == 7){
+            if (sknum == 1){
+                if (region == 0) pdf7_sk1_low_(&en, &val);
+                if (region == 1) pdf7_sk1_med_(&en, &val);
+                if (region == 2) pdf7_sk1_high_(&en, &val);
+            }
+            if (sknum == 2){
+                if (region == 0) pdf7_sk2_low_(&en, &val);
+                if (region == 1) pdf7_sk2_med_(&en, &val);
+                if (region == 2) pdf7_sk2_high_(&en, &val);
+            }
+            if (sknum == 3){
+                if (region == 0) pdf7_sk3_low_(&en, &val);
+                if (region == 1) pdf7_sk3_med_(&en, &val);
+                if (region == 2) pdf7_sk3_high_(&en, &val);
+            }
+        }
+        if (model == 5){
+            if (sknum == 1){
+                if (region == 0) pdf5_sk1_low_(&en, &val);
+                if (region == 1) pdf5_sk1_med_(&en, &val);
+                if (region == 2) pdf5_sk1_high_(&en, &val);
+            }
+            if (sknum == 2){
+                if (region == 0) pdf5_sk2_low_(&en, &val);
+                if (region == 1) pdf5_sk2_med_(&en, &val);
+                if (region == 2) pdf5_sk2_high_(&en, &val);
+            }
+            if (sknum == 3){
+                if (region == 0) pdf5_sk3_low_(&en, &val);
+                if (region == 1) pdf5_sk3_med_(&en, &val);
+                if (region == 2) pdf5_sk3_high_(&en, &val);
+            }
+        }
+        if (model == 3){
+            if (sknum == 1){
+                if (region == 0) pdf3_sk1_low_(&en, &val);
+                if (region == 1) pdf3_sk1_med_(&en, &val);
+                if (region == 2) pdf3_sk1_high_(&en, &val);
+            }
+            if (sknum == 2){
+                if (region == 0) pdf3_sk2_low_(&en, &val);
+                if (region == 1) pdf3_sk2_med_(&en, &val);
+                if (region == 2) pdf3_sk2_high_(&en, &val);
+            }
+            if (sknum == 3){
+                if (region == 0) pdf3_sk3_low_(&en, &val);
+                if (region == 1) pdf3_sk3_med_(&en, &val);
+                if (region == 2) pdf3_sk3_high_(&en, &val);
             }
         }
         if (model == -1){
@@ -8917,5 +8991,6 @@ vector<vector<double>> get_pdfs(vector<double> energies, int sknum, int region, 
 PYBIND11_MODULE(likes, m){
     m.doc() = "PDFs for SRN spectral analysis";
     m.def("pdf", &pdf);
+    m.def("pdftemp", &pdftemp);
     m.def("get_pdfs", &get_pdfs);
 }
