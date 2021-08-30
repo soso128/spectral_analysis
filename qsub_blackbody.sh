@@ -3,7 +3,7 @@ ulimit -c 0 # disable core dumps
 
 spectral_dir=/disk02/usr6/elhedri/spectral_analysis
 
-queue=ALL
+queue=all
 maxjobs=200
 
 cd $spectral_dir
