@@ -1141,8 +1141,7 @@ def analyse(likes, final=False):
     """ Extract limits """
     lmax = likes[:, -1].max()
     bestpos = likes[:, -1].argmax()
-    fact = 0.5 if final else 1
-    rel = likes[:, -2] * fact
+    rel = likes[:, -2]
     best = rel[bestpos]
     print(lmax)
     print((likes[:, -1] - lmax).dtype)
@@ -1203,7 +1202,7 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, elow, ehigh, elow_1n,
             ax.set(title=titles[region])
             ax.title.set_fontsize(10)
         ax.set(xlabel = "E$_\\mathrm{rec}$ (MeV)")
-
+    
     plt.style.use("seaborn")
     if sknum < 4:
         _, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
@@ -1369,11 +1368,13 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         flikes = interp1d(likes[:, -2], exp(likes[:, -1] - lmax), # like(relic)
                           bounds_error=False, fill_value = 0)
         rates = arange(rmin, rmax, rstep)
-        lconv = flikes(rates[:, newaxis] * epsrange[newaxis, :] * livetimes[sknum - 1]/365.25* 0.5)
+        lconv = flikes(rates[:, newaxis] * epsrange[newaxis, :] * livetimes[sknum - 1]/365.25)
         simpsoncoeff = array([step/3.] + list((1 + (arange(1,1000)%2))*2./3 * step) + [step/3.])
         ltot = (lconv * (pgaus * epsrange * simpsoncoeff)).sum(axis = 1)
         likenew = log(ltot) + lmax
-        return column_stack((likes[:, :-1], likenew))
+        like_rate = interp1d(rates, likenew)
+        num_rate = likes[:, -2]/(eff * livetimes[sknum - 1]) * 365.25
+        return column_stack((likes[:, :-1], num_rate, like_rate(num_rate)))
 
     if sknum == 2:
         elow = 17.5
@@ -1636,7 +1637,7 @@ def combine_fluxes(results, fluxfacts):
     newlikes = flike(flux_sampling)
     liketot = newlikes - newlikes.max()
     for i, r in enumerate(results[1:]):
-        rels, likes = r[:, 0], r[:, -1]
+        rels, likes = r[:, -2], r[:, -1]
         fluxes = rels * fluxfacts[i + 1]
         flike = interp1d(fluxes, likes, bounds_error=False, fill_value=1e-10)
         newlikes = flike(flux_sampling)
@@ -1664,6 +1665,10 @@ def fullike(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=None, 
     fluxlims = [like1[0], like2[0], like3[0], like4[0]]
     fluxfacs = [like1[1], like2[1], like3[1], like4[1]]
     results = [like1[2], like2[2], like3[2], like4[2]]
+    rate = arange(0, rmax, rstep)
+    for i,r in enumerate(results):
+        flike = interp1d(r[:, -2], r[:, -1], bounds_error = False, fill_value = r[:, -1].min())
+        results[i] = column_stack((rate, flike(rate)))
     pred_rate = like1[3]
     pred_flux = like1[4]
     ratelims = array(fluxlims) / array(fluxfacs)
@@ -1677,7 +1682,7 @@ def fullike(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=None, 
         plt.figure()
         plt.xlabel("DSNB events/year")
         plt.ylabel("Likelihood")
-        x = results[0][:, 0]/2
+        x = results[0][:, -2]
         plt.plot(x, results[0][:, -1] - results[0][:,-1].max(),
                  label="SK-I", alpha=0.5)
         plt.plot(x, results[1][:, -1] - results[1][:,-1].max(),
