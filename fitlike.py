@@ -1884,7 +1884,7 @@ if __name__ == "__main__":
     parser.add_argument('--gd', help=('Specify Gd concentration (0.1 or 0.01),'
                                       ' otherwise water is assumed'), type=float)
     parser.add_argument('--lt', help='Toy dataset livetime in days (default: 10yrs)', type=float, default=3652.5)
-    parser.add_argument('--spall', help='Add spallation backgrounds (0/1, default: 0)', type=float, default=0)
+    parser.add_argument('--spall', help='Add spallation backgrounds (0/1, default: 0)', type=int, default=0)
     parser.add_argument('--drawonly', help='Redraw plots from fit result file (0/1, default: 0)', type=int, default=0)
     args = parser.parse_args()
 
