@@ -1201,7 +1201,7 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, elow, ehigh, elow_1n,
                       r"Sideband (78$^\circ$ < $\Theta_C$ < 90$^\circ$)"]
             ax.set(title=titles[region])
             ax.title.set_fontsize(10)
-        ax.set(xlabel = "E$_\\mathrm{rec}$ (MeV)")
+        ax.set(xlabel = "E$_\\mathrm{rec}$ [MeV]")
     
     plt.style.use("seaborn")
     if sknum < 4:
@@ -1714,6 +1714,142 @@ def fullike(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=None, 
     print(f"90%% c.l. combined flux limit: {fluxlim_comb} /cm^2/s > 17.3 MeV")
     print(f"Predicted flux: {pred_flux}")
 
+def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
+            outdir='.', use_spall = False):
+    '''
+    Plot results without fitting for all SK phases
+    model = SRN model
+    elow = energy threshold (here, 16MeV)
+    '''
+
+    def load_sample(sknum, ntag=False):
+        ''' Data samples for SK I-IV '''
+        if ntag:
+            low = loadtxt("sk{}/ntag/samplelow.txt".format(int(sknum)))[:, 1]
+            med = loadtxt("sk{}/ntag/samplemed.txt".format(int(sknum)))[:, 1]
+            high = loadtxt("sk{}/ntag/samplehigh.txt".format(int(sknum)))[:, 1]
+            low = low[(low > elow_sk4_1n) & (low < ehigh_sk4)]
+            med = med[(med > elow_sk4_1n) & (med < ehigh_sk4)]
+            high = high[(high > elow_sk4_1n) & (high < ehigh_sk4)]
+        else:
+            #if sknum < 4:
+            low = loadtxt("sk{}/samplelow.txt".format(int(sknum)))[:, 1]
+            med = loadtxt("sk{}/samplemed.txt".format(int(sknum)))[:, 1]
+            high = loadtxt("sk{}/samplehigh.txt".format(int(sknum)))[:, 1]
+            print(f"sample: {(med < 18).sum()} {elow} {sknum}")
+            #if sknum == 4:
+                #low = loadtxt("sk{}/tight/samplelow.txt".format(int(sknum)))[:, 1]
+                #med = loadtxt("sk{}/tight/samplemed.txt".format(int(sknum)))[:, 1]
+                #high = loadtxt("sk{}/tight/samplehigh.txt".format(int(sknum)))[:, 1]
+            low = low[(low > elow) & (low < ehigh)]
+            med = med[(med > elow) & (med < ehigh)]
+            high = high[(high > elow) & (high < ehigh)]
+        return low,med,high
+
+    def get_spasolbins(sknum, ntag=False):
+        ''' Get efficiency steps for background pdfs '''
+        bins = []
+        effs = []
+        if sknum < 4 or not ntag:
+            spa = spaeff[sknum- 1]
+            sol = soleff[sknum - 1]
+            spabins = spa[:, 0]
+            solbins = sol[:, 0]
+            effspa = lambda x: 1.0 if x < spa[0,0] else spa[(spa[:, 0] <= x), -1][-1]
+            effsol = lambda x: 1.0 if x < sol[0,0] else sol[(sol[:, 0] <= x), -1][-1]
+            bins = array(list(set(sorted(append(spabins, solbins)))))
+            effs = vectorize(effspa)(bins) * vectorize(effsol)(bins)
+            bins = list(bins) + [90.]
+        elif sknum == 4 and ntag:
+            bins = list(spaeff_sk4[:, 0]) + [90.]
+            effs = list(spaeff_sk4[:, 1])
+        else:
+            raise ValueError(f"No search for SK-{sknum} and ntag={ntag}")
+        return bins, effs
+
+    # Plot spectra for all phases of SK
+    """ Fit SK I-IV data """
+    if elow_sk4 is None:
+        elow_sk4 = elow
+    if elow_sk4_1n is None:
+        elow_sk4_1n = elow
+    if ehigh_sk4 is None:
+        ehigh_sk4 = ehigh
+    with open(f"{outdir}/fit.log") as fitfile:
+        lines = fitfile.readlines()
+        nnue = array([float(line.split()[-1]) for line in lines if line.startswith("nu-e")])
+        nnumu = array([float(line.split()[-1]) for line in lines if line.startswith("nu-mu")])
+        nnc = array([float(line.split()[-1]) for line in lines if line.startswith("NC elastic")])
+        nmupi = array([float(line.split()[-1]) for line in lines if line.startswith("mu/pi")])
+        nspall = array([float(line.split()[-1]) for line in lines if line.startswith("Spallation")]) if use_spall else zeros((4,))
+        rates_relic = array([float(line.split()[0]) for line in lines if (line.strip()).endswith("relic evts/yr")])
+        print(nnue, nnumu, nnc, nmupi, nspall, rates_relic)
+        elow_sk13 = elow
+        for sknum in range(1, 5):
+            if sknum == 4:
+                elow = elow_sk4
+                ehigh = ehigh_sk4
+                samplow, sampmed, samphigh = load_sample(sknum)
+                samples_n = None
+                samplow_n, sampmed_n, samphigh_n = load_sample(sknum, ntag=True) # SK-IV ntag samples
+                samples_n = [samplow_n, sampmed_n, samphigh_n]
+            elif sknum == 2:
+                elow = elow_sk2
+                samplow, sampmed, samphigh = load_sample(sknum)
+                samples_n = None
+            else:
+                elow = elow_sk13
+                samplow, sampmed, samphigh = load_sample(sknum)
+                samples_n = None
+            bg_sk4_dir = "./pdf_bg_sk4"
+            cut_bins_ntag, cut_effs_ntag = get_spasolbins(sknum, ntag=True)
+            cut_bins, cut_effs = get_spasolbins(sknum, ntag=False)
+            cut_effs = tile(cut_effs, (4, 1))
+            cut_effs_ntag = tile(cut_effs_ntag, (4, 1))
+
+            bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs[i],
+                        cut_bins_ntag, cut_effs_ntag[i], bg_sk4_dir, elow,
+                        ehigh=ehigh, elow_n=elow_sk4_1n ) for i in range(4)]
+            if use_spall:
+                solbins = array(list(soleff[sknum - 1][:, 0]) + [90.])
+                soleffs = soleff[sknum - 1][:, 1]
+                bgs_sk4 += [spall_sk(solbins, soleffs, effs_3rdred[sknum - 1], sknum, elow, ehigh=ehigh)]
+            signal, flux_fac, pred_rate, pred_flux = load_signal_pdf(sknum, model, elow, ehigh, elow_sk4_1n)
+            effsignal = signal.overall_efficiency_16_90() # Always use calculated eff.
+            nrel = rates_relic[sknum - 1] * effsignal * livetimes[sknum - 1]/365.25
+            print(f"sample: {(sampmed < 18).sum()} {elow} {sknum}")
+            plotfit(nnue[sknum - 1], nnumu[sknum - 1], nnc[sknum - 1], 
+                    nmupi[sknum - 1], model[sknum - 1], sknum,
+                    elow, ehigh, elow_sk4_1n, samples=[samplow, sampmed, samphigh],
+                    samples_n=samples_n, signal=signal, background=bgs_sk4, use_spall = use_spall,
+                   nrelic = nrel, nspall = nspall[sknum - 1])
+            plt.savefig(f"{outdir}/new/fit_sk{sknum}.pdf")
+            plt.clf()
+    # Plot likelihoods
+    results = [loadtxt(f"{outdir}/fit_sk{sknum}.txt") for sknum in range(1,5)]
+    #plt.style.use("seaborn")
+    plt.figure()
+    plt.xlabel("DSNB [events/year]")
+    plt.ylabel("Likelihood")
+    x = results[0][:, -2]
+    plt.plot(x, results[0][:, -1] - results[0][:,-1].max(),
+             label="SK-I", alpha=0.5)
+    plt.plot(x, results[1][:, -1] - results[1][:,-1].max(),
+             '--', label="SK-II", alpha=0.5)
+    plt.plot(x, results[2][:, -1] - results[2][:,-1].max(),
+             '-.', label="SK-III", alpha=0.5)
+    plt.plot(x, results[3][:, -1] - results[3][:,-1].max(),
+             '--', label="SK-IV",linewidth=2)
+    likesum = results[0][:, -1] + results[1][:, -1] + results[2][:, -1] + results[3][:, -1]
+    likesum -= likesum.max()
+    plt.plot(x, likesum, label = "Combined", color = 'black')
+    plt.plot([0,20], -0.5 * ones(2), 'r')
+    plt.xlim(0,20)
+    plt.ylim(-2,0.2)
+    # plt.grid()
+    plt.legend()
+    plt.savefig(outdir + "/new/full_like.pdf")
+    plt.clf()
 
 def sk4like(model, elow_sk4, ehigh_sk4, elow_sk4_1n=None, toydir=None,
             rmin=-5, rmax=100, rstep=0.1, quiet=False, outdir='.',
@@ -1749,6 +1885,7 @@ if __name__ == "__main__":
                                       ' otherwise water is assumed'), type=float)
     parser.add_argument('--lt', help='Toy dataset livetime in days (default: 10yrs)', type=float, default=3652.5)
     parser.add_argument('--spall', help='Add spallation backgrounds (0/1, default: 0)', type=float, default=0)
+    parser.add_argument('--drawonly', help='Redraw plots from fit result file (0/1, default: 0)', type=int, default=0)
     args = parser.parse_args()
 
     modelname = args.modelname
@@ -1764,7 +1901,10 @@ if __name__ == "__main__":
         sk4like(modelname, elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
             outdir=directory, toydir=toy_data_dir, systematics=systematics,
             skgd_conc=args.gd, use_spall = args.spall, quiet = quiet)
-
+    elif args.drawonly:
+        plot_results(modelname, elow=16, ehigh=90, elow_sk2=17.5,
+            elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
+            outdir=directory, use_spall = args.spall)
     else:
         quiet = False
         fullike(modelname, elow=16, ehigh=90, elow_sk2=17.5,
