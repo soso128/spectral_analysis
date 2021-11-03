@@ -1586,7 +1586,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
     lpos = results_sys[:, -1].argmax()
 
     # Save and display results
-    savetxt(f"{outdir}/fit_sk{sknum}.txt", column_stack((results, results_sys[:, -1])))
+    savetxt(f"{outdir}/fit_sk{sknum}.txt", column_stack((results, results_sys[:, -2:])))
     print("SK-{}".format(sknum), "Best fit:")
     print("{} +{} -{} relic evts/yr".format(best, errplus, errminus))
     print("{} +{} -{} /cm^2/s > 17.3 MeV".format(flux_best, errplus*flux_fac, errminus*flux_fac))
@@ -1827,7 +1827,11 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
             plt.clf()
     # Plot likelihoods
     results = [loadtxt(f"{outdir}/fit_sk{sknum}.txt") for sknum in range(1,5)]
-    #plt.style.use("seaborn")
+    rate = results[0][:, 0]
+    for i,r in enumerate(results):
+        flike = interp1d(r[:, -2], r[:, -1], bounds_error = False, fill_value = r[:, -1].min())
+        results[i] = column_stack((rate, flike(rate)))
+    plt.style.use("seaborn")
     plt.figure()
     plt.xlabel("DSNB [events/year]")
     plt.ylabel("Likelihood")
