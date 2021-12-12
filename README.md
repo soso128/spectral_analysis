@@ -17,12 +17,12 @@ The code is now ready to use. snrate can be used like a regular Python module.
 
 The main code is fitlike.py . To run the spectral fit for all phases of SK use
 
-'''<python executable>  fitlike.py <model name>  <output folder>  [--sys <systematics flag>] [--thr <analysis threshold for events with != 1 neutron>] 
-  [--thr1n <analysis threshold for events with 1 neutron>] [--spall <spallation flag>]'''
+```<python executable>  fitlike.py <model name>  <output folder>  [--sys <systematics flag>] [--thr <analysis threshold for events with != 1 neutron>] 
+  [--thr1n <analysis threshold for events with 1 neutron>] [--spall <spallation flag>]```
   
 The SN neutrino flux files for the available models can be found in the models/ folders. The flux files have the following naming convention:
   
-'''flux_cross_\<model name\>.dat'''
+```flux_cross_\<model name\>.dat```
   
 The output folder should be created by the user before running the code.
   
