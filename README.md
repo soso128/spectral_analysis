@@ -18,13 +18,7 @@ You need to compile the snrate module (C++ code interfaced using Pybind11). In t
 
 The code is now ready to use. snrate can be used like a regular Python module.
 
-In order to get information about the detector effects, simulated events are used for the different phases of Super-Kamiokande (SK). These events are stored in [this folder](), which is too large to be stored on Github. So you should do:
-```
-wget ...
-cp npy_files.tar.gz mc/
-cd mc/
-tar -xzf npy_files.tar.gz
-```
+In order to get information about the detector effects, simulated events are used for the different phases of Super-Kamiokande (SK). These events are stored on [Zenodo](https://zenodo.org/record/5779986), since the folder is too large to be stored on Github. So you should download the spectral_analysis_npy_SKMC.tar.gz from the Zenodo data release, then unpack and copy it to the mc/ folder.
 
 ## Running the fits
 
