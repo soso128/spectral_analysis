@@ -266,6 +266,16 @@ class relic_sk:
         # self.norm_all = self._get_norm_all()  # Norm in whole range
         self.norm = self._get_norm() # Normalization after cuts to 1
 
+        # print('effs0', [self.effs[0](e) for e in range(12, 50)])
+        # print('effs1', [self.effs[1](e) for e in range(12, 50)])
+        print("Checking normalization...")
+        totarea=0.0
+        for ntag in range(len(self.nregions_frac)):
+            for region in range(3):
+                totarea += quad(self.pdf, self.elows[ntag],
+                             self.ehigh, args=(region, ntag))[0]
+        print("PDF of integral over E range =",totarea)
+
     def _check_valid_energy(self, energy, ntag=False):
         if energy < self.elows[ntag] or energy > self.ehigh:
             raise ValueError("Energy (%0.2f) outside analysis range (%0.2f-%0.2f)"
@@ -379,9 +389,13 @@ class relic_sk:
 
     def overall_efficiency_16_90(self):
         ''' Cut efficiency relative to 16-90 MeV energy spectrum'''
-        # print(self.norm_16_90)
-        # print(self.norm)
         return self.norm_16_90 / self.norm
+    
+    def max_efficiency_16_90(self):
+        ''' Maximum of the cut "efficiency" obtained from 
+        overall_efficiency_16_90()
+        (can be > 1.0 if the energy threshold is below 16 MeV) '''
+        return self.norm_16_90 / self.norm0
 
     # def overall_efficiency_all(self):
     #     ''' Cut efficiency over the whole srn spectrum '''
