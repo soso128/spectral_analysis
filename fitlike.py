@@ -2,6 +2,7 @@
 from __future__ import division
 from sys import path
 from ast import literal_eval
+from time import time
 import argparse
 import pickle
 
@@ -1880,6 +1881,7 @@ if __name__ == "__main__":
     e_thr = args.thr
     e_thr_1n = args.thr1n
 
+    start_time = time()
     if args.toy:
         toy_data_dir = args.toy
         # quiet = False
@@ -1898,3 +1900,11 @@ if __name__ == "__main__":
             elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
             outdir=directory, systematics=systematics, use_spall=args.spall,
             quiet=args.quiet, rmin=args.rmin, rmax=args.rmax, rstep=args.rstep)
+    
+    end_time = time()
+    elapsed_time = end_time - start_time
+    elapsed_hr = int(elapsed_time // 3600)
+    elapsed_min = int(elapsed_time % 3600 // 60)
+    elapsed_sec = elapsed_time % 3600 % 60
+    print("")
+    print(f"Fit completed in {elapsed_hr} hr {elapsed_min} min {elapsed_sec:.2f} sec")
