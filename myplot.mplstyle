@@ -1,0 +1,40 @@
+### Matplotlib params ###################
+figure.figsize: 12.0, 7.0
+
+## Axes ##
+axes.labelsize:    22
+axes.titlesize:    22
+axes.axisbelow:    line
+axes.titleweight:  bold
+axes.titlepad:     9.0
+axes.edgecolor:    black
+axes.spines.top:   True
+axes.spines.right: True
+axes.linewidth:    1.5
+
+## Ticks ##
+xtick.direction:   in
+ytick.direction:   in
+xtick.major.size:  10
+ytick.major.size:  10
+xtick.minor.size:  10
+ytick.minor.size:  10
+xtick.labelsize:   14
+ytick.labelsize:   14
+xtick.major.width: 1.5
+ytick.major.width: 1.5
+
+legend.fontsize:   14
+legend.frameon:       False     # if True, draw the legend on a background patch
+legend.framealpha:    1.0      # legend patch transparency
+legend.fancybox:      False     # if True, use a rounded box for the
+                                # legend background, else a rectangle
+#legend.shadow:        False    # if True, give background a shadow effect
+#legend.numpoints:     1        # the number of marker points in the legend line
+#legend.scatterpoints: 1        # number of scatter points
+#legend.markerscale:   1.0      # the relative size of legend markers vs. original
+
+grid.alpha:        0.5
+
+axes.prop_cycle: cycler('color', ['0034c2','tab:green', 'tab:red', 'magenta', 'darkorange', '17becf', '9467bd', '8c564b', '7f7f7f', 'bcbd22'])
+#########################################

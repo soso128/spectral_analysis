@@ -5,6 +5,7 @@ from ast import literal_eval
 from time import time
 import argparse
 import pickle
+import os
 
 from numpy import *
 from scipy.interpolate import interp1d
@@ -12,6 +13,7 @@ from scipy.integrate import quad
 from scipy.optimize import fmin
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib import gridspec
 
 path.append("spectrum_generator/")
 import snspectrum as sns
@@ -21,8 +23,16 @@ from pdf_sk4 import bg_sk4, relic_sk, spall_sk
 from esys_scale_res import esys
 from esys_pdf_distorsions import get_distorsion_functions
 
-mpl.rcParams['font.size'] = 15
-
+plt.style.use(["seaborn","myplot.mplstyle"])
+plt.rcParams["xtick.major.size"]=  5
+plt.rcParams["ytick.major.size"]=  5
+plt.rcParams["xtick.minor.size"]=  5
+plt.rcParams["ytick.minor.size"]=  5
+plt.rcParams["legend.fontsize"]=  16
+plt.rcParams["legend.markerscale"]=  1.5
+plt.rcParams["legend.frameon"]=  False
+plt.rcParams["grid.alpha"]= 1.0
+plt.rcParams['mathtext.default']='regular'
 
 # livetimes
 livetimes = array([1497.44, 793.71, 562.04, 2970.1])
@@ -1263,54 +1273,105 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, elow, ehigh, elow_1n,
                                 ntag=ntag, backgrounds=background) for ee in en])
         relic = nrelic * array([pdf(ee, sknum, model, elow, pdfids['rel'], region,
                                     ntag=ntag,signal=signal) for ee in en])
-        ax.plot(en, step*nuecc, label = r"$\nu_e$ CC")
-        ax.plot(en, step*nc, label = "NCQE")
-        ax.plot(en, step*numucc, label = r"Decay $e^-$")
-        ax.plot(en, step*mupi, label = r"$\mu/\pi$")
-        if use_spall: ax.plot(en, step*spall, label = r"Spallation")
-        if model == "horiuchi":
-            ax.plot(en, step*relic, label = "DSNB (Horiuchi+09)")
-        else:
-            ax.plot(en, step*relic, label = "DSNB")
-        if use_spall: ax.plot(en, step*(mupi + nc + numucc + nuecc + spall), label = "All backgrounds")
-        else: ax.plot(en, step*(mupi + nc + numucc + nuecc), label = "All backgrounds")
-        h = histogram(data, bins = arange(elow, ehigh,step))
+        h = histogram(data, bins=arange(elow, ehigh, step))
         x = h[1][1:] - 0.5 * (h[1][1:] - h[1][:-1])
-        ax.errorbar(x, h[0], xerr = step/2, yerr = sqrt(h[0]), fmt = '.', color = 'black')
+        ax.errorbar(x, h[0], xerr = step/2, yerr = sqrt(h[0]),
+                    elinewidth=1, fmt='.', color='black')
+
+        bglabels = [r"CC $\nu_e$", r"Decay e$^-$", r"NCQE", r"$\mu/\pi$"]
+        bgs = [nuecc, numucc, nc, mupi]
+        colors=["C1", "C5", "C3",  "C6"]
+        bg_plots = []
+        for i, bg in enumerate(bgs):
+            bgplot, = ax.plot(en, step*bg, label=bglabels[i],
+                              linewidth=1.5, color=colors[i])
+            bg_plots += [bgplot]
+
+        if use_spall:
+            bgplot, = ax.plot(en, step*spall, label="Spallation",
+                        linewidth=1.5, color="C4")
+            bg_plots += [bgplot]
+            bglabels += ["Spallation"]
+
+        model_label =  "DSNB (Horiuchi+09)" if model=="horiuchi" else "DSNB"
+        s_plot, = ax.plot(en, step*relic, label=model_label,
+                          linewidth=3, color="C2")
+        bg_total = nuecc + numucc + nc + mupi
+        if use_spall: bg_total += spall
+        ax.plot(en, step*(bg_total+relic), linewidth=3, color="C2")
+        all_bg_plot, = ax.plot(en, step*(bg_total), label="All backgrounds",
+                               linewidth=3, color="tab:blue")
+
+        xlims = (16, 80)
+        ylims = (-2, 22)
+        xticks = append(arange(20, 80, 10), 16)
+        yticks = arange(0, 22, 2)
+        plt.sca(ax)
+        plt.xlim(*xlims)
+        plt.xticks(xticks)
+        plt.yticks(yticks)
+        plt.ylim(*ylims)
         if ax.is_first_col():
-            ax.legend(loc='upper left', prop={'size': 11})
-            if ntag is None:
-                ax.set(ylabel="Number of events after cuts")
-            elif ntag:
-                ax.set(ylabel="Number of events after cuts\n1 neutron tag")
-            else:
-                ax.set(ylabel="Number of events after cuts\n0 / >1 neutron tags")
+            ax.set(ylabel=f"Events / {step:d} MeV")
+        else:
+            plt.setp(ax.get_yticklabels(), visible=False)
+
+        if ax.is_first_col() and ax.is_first_row():
+            yshift = 0.86 if ntag is not None else 0.9
+            legend1 = plt.legend([s_plot, all_bg_plot],
+                        ["DSNB", "All backgrounds"],
+                         loc="upper left", prop={'weight':'bold'})
+            legend2 = plt.legend(bg_plots, bglabels, loc="upper left",
+                       bbox_to_anchor=(0.05,yshift))
+            plt.gca().add_artist(legend1)
+            plt.gca().add_artist(legend2)
+
+        if ax.is_first_col() and ntag is not None:
+            nlabels = ["N$_{ntag}\\neq1$", "N$_{ntag}=1$"]
+            ax.text(-0.3,0.5, nlabels[ntag], size=30,
+                            transform=ax.transAxes,
+                            verticalalignment='center', rotation=90)
+
+        if ax.is_first_row() and ax.is_last_col():
+            sklabels = ["SK-I\n1497 days",
+                        "SK-II\n794 days",
+                        "SK-III\n562 days",
+                        "SK-IV\n2970 days"]
+            yshift = 0.76 if ntag is not None else 0.8
+            ax.text(0.88,yshift, sklabels[sknum-1], size=30,
+                        transform=ax.transAxes, weight="bold",
+                        horizontalalignment='right')
+        
+
         if ax.is_first_row():
-            titles = [r"Sideband (20$^\circ$ < $\Theta_C$ < 38$^\circ$)",
-                      r"Signal region (38$^\circ$ < $\Theta_C$ < 50$^\circ$)",
-                      r"Sideband (78$^\circ$ < $\Theta_C$ < 90$^\circ$)"]
-            ax.set(title=titles[region])
-            ax.title.set_fontsize(10)
-        ax.set(xlabel = "E$_\\mathrm{rec}$ [MeV]")
-    
-    plt.style.use("seaborn")
+            alabels = ["$20\degree<\\theta_C<38\degree$",
+               "$38\degree<\\theta_C<50\degree$",
+               "$70\degree<\\theta_C<90\degree$"]
+
+            ax.text(0.5,1.03, alabels[region], size=30,
+                        transform=ax.transAxes,
+                        horizontalalignment='center')
+        if ax.is_first_row() and ntag is not None:
+            plt.setp(ax.get_xticklabels(), visible=False)
+        if ax.is_last_row():
+            ax.set(xlabel="E$_\\mathrm{rec}$ [MeV]")
+        plt.grid(which="minor")
     if sknum < 4:
-        _, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
-        samplow, sampmed, samphigh = samples
-        plotregion(1, sampmed, ax2)
-        plotregion(2, samphigh, ax3)
-        plotregion(0, samplow, ax1)
+        plt.figure(figsize=(16.0, 8.0))
+        gs = gridspec.GridSpec(1, 3)
+        for areg in range(3):
+            ax = plt.subplot(gs[0, areg])
+            plotregion(areg, samples[areg], ax)
     else:
-        _, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, sharey=True, figsize=(13, 10))
-        samplow, sampmed, samphigh = samples
-        samplow_1n, sampmed_1n, samphigh_1n = samples_n
-        plotregion(1, sampmed, ax2, elow=elow, ntag=False)
-        plotregion(2, samphigh, ax3, elow=elow, ntag=False)
-        plotregion(0, samplow, ax1, elow=elow, ntag=False)
-        plotregion(1, sampmed_1n, ax5, elow=elow_1n, ntag=True)
-        plotregion(2, samphigh_1n, ax6, elow=elow_1n, ntag=True)
-        plotregion(0, samplow_1n, ax4, elow=elow_1n, ntag=True)
+        plt.figure(figsize=(16.0, 12.0))
+        gs = gridspec.GridSpec(2, 3)
+        for areg in range(3):
+            ax = plt.subplot(gs[0, areg])
+            plotregion(areg, samples[areg], ax, elow=elow, ntag=False)
+            ax = plt.subplot(gs[1, areg])
+            plotregion(areg, samples_n[areg], ax, elow=elow_1n, ntag=True)
     plt.subplots_adjust(wspace=0)
+    plt.subplots_adjust(hspace=0)
 
 
 def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
@@ -1786,8 +1847,7 @@ def fullike(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=None, 
     print("Results: ", results[-1][results[-1][:, -1].argmax(), -2])
 
     if not quiet:
-        plt.style.use("seaborn")
-        plt.figure()
+        plt.figure(figsize=(12.0, 8.0))
         plt.xlabel("DSNB events/year")
         plt.ylabel("Likelihood")
         x = results[0][:, -2]
@@ -1829,6 +1889,7 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
     model = SRN model
     elow = energy threshold (here, 16MeV)
     '''
+    os.makedirs(f"{outdir}/replot", exist_ok=True)
 
     def load_sample(sknum, ntag=False):
         ''' Data samples for SK I-IV '''
@@ -1931,7 +1992,7 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
                     elow, ehigh, elow_sk4_1n, samples=[samplow, sampmed, samphigh],
                     samples_n=samples_n, signal=signal, background=bgs_sk4, use_spall = use_spall,
                    nrelic = nrel, nspall = nspall[sknum - 1])
-            plt.savefig(f"{outdir}/new/fit_sk{sknum}.pdf")
+            plt.savefig(f"{outdir}/replot/fit_sk{sknum}.pdf")
             plt.clf()
     # Plot likelihoods
     results = [loadtxt(f"{outdir}/fit_sk{sknum}.txt") for sknum in range(1,5)]
@@ -1939,9 +2000,8 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
     for i,r in enumerate(results):
         flike = interp1d(r[:, -2], r[:, -1], bounds_error = False, fill_value = r[:, -1].min())
         results[i] = column_stack((rate, flike(rate)))
-    plt.style.use("seaborn")
-    plt.figure()
-    plt.xlabel("DSNB [events/year]")
+    plt.figure(figsize=(12.0, 8.0))
+    plt.xlabel("DSNB rate [events/year]")
     plt.ylabel("Likelihood")
     x = results[0][:, -2]
     plt.plot(x, results[0][:, -1] - results[0][:,-1].max(),
@@ -1960,7 +2020,7 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
     plt.ylim(-2,0.2)
     # plt.grid()
     plt.legend()
-    plt.savefig(outdir + "/new/full_like.pdf")
+    plt.savefig(outdir + "/replot/full_like.pdf")
     plt.clf()
 
 def sk4like(model, elow_sk4, ehigh_sk4, elow_sk4_1n=None, toydir=None,
@@ -1996,7 +2056,7 @@ if __name__ == "__main__":
     parser.add_argument('modelname', help="DNSB model name")
     parser.add_argument('directory', help='Fit output directory')
     parser.add_argument('--sys', help='systematics mode [-1, 0, 1, or 2]', type=int, default = 1)
-    parser.add_argument('--thr', help='SK4 Energy threshold (non-IBD region)', type=float, default=20)
+    parser.add_argument('--thr', help='SK4 Energy threshold (non-IBD region)', type=float, default=16)
     parser.add_argument('--thr1n', help='SK4 Energy threshold (IBD region)', type=float, default=16)
     parser.add_argument('--toy', help='Toy dataset location (replaces data)')
     parser.add_argument('--gd', help=('Specify Gd neutron capture fraction,'
@@ -2004,7 +2064,6 @@ if __name__ == "__main__":
     parser.add_argument('--lt', help='Toy dataset livetime in days (default: 10yrs)', type=float, default=3652.5)
     parser.add_argument('--spall', help='Add spallation backgrounds (0/1, default: 0)', type=int, default=0)
     parser.add_argument('--nonc', help='Assume no NC background (0/1, default: 0)', type=int, default=0)
-    parser.add_argument('--drawonly', help='Redraw plots from fit result file (0/1, default: 0)', type=int, default=0)
     parser.add_argument('--rmin', help="Minimum rate sampled", type=float, default=-5.)
     parser.add_argument('--rmax', help="Maximum rate sampled", type=float, default=100.)
     parser.add_argument('--rstep', help="Rate sampling step size", type=float, default=0.1)
@@ -2037,7 +2096,7 @@ if __name__ == "__main__":
             trig_lo=args.triglo, trig_hi=args.trighi,
             ineff_scale=args.ineff_scale, ncsys_scale=args.ncsys_scale)
     elif args.drawonly:
-        plot_results(modelname, elow=16, ehigh=90, elow_sk2=17.5,
+        plot_results(modelname, elow=16, ehigh=90, elow_sk2=16,
             elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
             outdir=directory, use_spall=args.spall)
     else:
