@@ -8,12 +8,18 @@ from scipy.interpolate import interp1d
 #####################################
 ## Change MC files in get_flux_from_mc
 #####################################
+## Update spall PDF parameters
+#####################################
+
 sk6_livetime = 522.2
-sk6_livetime_test = 170 # data subset before full opening of dataset
+sk6_livetime_test = 170 # SK-VI data subset before full opening of dataset
 aft_eff_sk6 = 0.9
 sys_fv_sk6 = 0.015
 sys_eff_sk6 = 0.025
 sys_eff_sk6_ntag = 0.05
+
+# Directory with atmopsheric background PDF parametrizations
+bg_sk6_dir = "./pdf_bg_sk6"
 
 # Fractions of signal in Cherenkov angle regions
 s_ch_frac_sk6 = [9.433e-04, 9.925e-01, 6.525e-03]
@@ -74,6 +80,10 @@ sys_eff_sk4_ntag = 0.125
 regionids = {"low": 0, "medium": 1, "high": 2}
 pdfids = {"nue": 0, "numu": 1, "nc": 2, "mupi": 3, "spall": 4, "rel": 5}
 modelids = {"lma": 0, "faild": -3, "malaney": -1, "ksw": -2, "woosley": -4}
+
+# Directory with atmospheric background PDF parametrizations
+bg_sk4_dir = "./pdf_bg_sk4"
+bg_sk_dir = [bg_sk4_dir, bg_sk4_dir, bg_sk4_dir, bg_sk4_dir, bg_sk6_dir]
 
 # Signal Cherenkov angle fractions
 s_ch_frac = [9.433e-04, 9.925e-01, 6.525e-03]

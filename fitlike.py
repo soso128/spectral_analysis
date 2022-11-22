@@ -1202,7 +1202,6 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                                             elow, ehigh, elow_1n, ineff_scale)
 
     bgs_sk4 = None
-    bg_sk4_dir = "./pdf_bg_sk4"
     maxeffsignal = signal.max_efficiency_16_90()
     effsignal = signal.overall_efficiency_16_90() # Always use calculated eff.
     ntag_sys_fact = signal._get_ntag_sysfact() if sknum >= 4 else 0
@@ -1232,14 +1231,14 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
 
     numbkg = 4
     bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs[i],
-                cut_bins_ntag, cut_effs_ntag[i], bg_sk4_dir, elow,
+                cut_bins_ntag, cut_effs_ntag[i], bg_sk_dir[sk_id], elow,
                 ehigh=ehigh, elow_n=elow_1n ) for i in range(numbkg)]
     if use_spall:
-        solbins = array(list(soleff[sknum - 1][:, 0]) + [90.])
-        soleffs = soleff[sknum - 1][:, 1]
-        bgs_sk4 += [spall_sk(solbins, soleffs, effs_3rdred[sknum - 1], sknum, elow, ehigh=ehigh)]
+        solbins = array(list(soleff[sk_id][:, 0]) + [90.])
+        soleffs = soleff[sk_id][:, 1]
+        bgs_sk4 += [spall_sk(solbins, soleffs, effs_3rdred[sk_id], sk_id, elow, ehigh=ehigh)]
     print(f"Efficiency is {effsignal}")
-    if sknum == 4: print(f"Factor for ntag systematics is {ntag_sys_fact}")
+    if sknum >= 4: print(f"Factor for ntag systematics is {ntag_sys_fact}")
 
     # Get pdfs. PDF matrices: (Nen x Npdf)
     pdfs_high = get_pdfmatrix(samphigh, "high", ntag=False,

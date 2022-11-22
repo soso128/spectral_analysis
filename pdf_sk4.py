@@ -131,7 +131,8 @@ class spall_sk():
     spall = spall_sk4(cut_edges, efficiencies, efficiencies_3rd, 16) 
     spall.pdf(energy, region)
     '''
-    def __init__(self, cut_bins, cut_effs, efficiency_func, sknum, elow, ehigh=90.0):
+    def __init__(self, cut_bins, cut_effs, efficiency_func, sk_id,
+                elow, ehigh=90.0):
         '''cut_bins should be a list of N energy bin edges.
         cut_effs should be a list of N-1 cut efficiencies.
         '''
@@ -145,7 +146,7 @@ class spall_sk():
         self.cut_effs = effs
         self.efficiency_func = efficiency_func
 
-        self.func = self._get_func(sknum)
+        self.func = self._get_func(sk_id)
         self.norm0 = self._get_norm0()
         self.norm = self._get_norm() # Normalization after cuts to 1
 
@@ -157,13 +158,13 @@ class spall_sk():
             newbins, neweffs = list(bins) + [ehigh], list(effs) + [1.0]
         return newbins, neweffs
 
-    def _get_func(self, sknum):
+    def _get_func(self, sk_id):
         spall_emax = 24
-        expcoeff = [3588.821, 1.60559875e5, 7768.694, 2181.575]
-        exppow = [3.49809, 4.554, 3.7738, 3.3457]
+        expcoeff = [3588.821, 1.60559875e5, 7768.694, 2181.575, 2181.575]
+        exppow = [3.49809, 4.554, 3.7738, 3.3457, 3.3457]
         #exppow = [3.932, 4.650, 7.656, 3.746]
         #return lambda x: exp(-x * 0.836311) if x < spall_emax else 0
-        return lambda x: exp(-(x**exppow[sknum - 1])/expcoeff[sknum - 1]) if x < spall_emax else 0
+        return lambda x: exp(-(x**exppow[sk_id])/expcoeff[sk_id]) if x < spall_emax else 0
 
     def _get_norm0(self):
         ''' PDF normalization, before cuts '''
