@@ -1071,8 +1071,8 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         bins = []
         effs = []
         if sknum < 4 or not ntag:
-            spa = spaeff[sknum - 1]
-            sol = soleff[sknum - 1]
+            spa = spaeff[sk_id]
+            sol = soleff[sk_id]
             spabins = spa[:, 0]
             solbins = sol[:, 0]
             effspa = lambda x: 1.0 if x < spa[0,0] else spa[(spa[:, 0] <= x), -1][-1]
@@ -1147,7 +1147,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
     def applysys(likes, eff, rmin, rmax, rstep, sysfact=0, maxeff=1.0):
         ''' Apply gaussian systematic efficiency error correction'''
         print(f"Signal efficiency is {eff}")
-        syseff = sqrt(sys_eff[sknum - 1]**2 + sysfact**2 * sys_eff_sk4_ntag**2)
+        syseff = sqrt(sys_eff[sk_id]**2 + sysfact**2 * sys_eff_sk4_ntag**2)
         lower = max(eff * (1 - 6*syseff), 1e-10)
         # upper = min(eff * (1 + 6*syseff), 0.999)
         upper = min(eff * (1 + 6*syseff), maxeff) # TODO: remove?
@@ -1163,13 +1163,14 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         flikes = interp1d(likes[:, -2], exp(likes[:, -1] - lmax), # like(relic)
                           bounds_error=False, fill_value = 0)
         rates = arange(rmin, rmax, rstep)
-        lconv = flikes(rates[:, newaxis] * epsrange[newaxis, :] * livetimes[sknum - 1]/365.25)
+        lconv = flikes(rates[:, newaxis] * epsrange[newaxis, :] * livetimes[sk_id]/365.25)
         simpsoncoeff = array([step/3.] + list((1 + (arange(1,1000)%2))*2./3 * step) + [step/3.])
         ltot = (lconv * (pgaus * epsrange * simpsoncoeff)).sum(axis=1)
         # print("negativity of ltot", any(ltot<=0))
         likenew = log(ltot) + lmax
-        like_rate = interp1d(rates, likenew)
-        num_rate = likes[:, -2]/(eff * livetimes[sknum - 1]) * 365.25
+        like_rate = interp1d(rates, likenew, fill_value=1e-10, bounds_error=False)
+        num_rate = likes[:, -2]/(eff * livetimes[sk_id]) * 365.25
+        # print(rates, num_rate)
         return column_stack((likes[:, :-1], num_rate, like_rate(num_rate)))
 
     # Get the index associated with SK period,
@@ -1394,7 +1395,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
     # Systematic efficiency error correction + limits
     _, best2, errplus2, errminus2, limit2 = analyse(results)
     results_sys = applysys(results, effsignal, rmin, rmax, rstep, ntag_sys_fact, maxeffsignal)
-    _, best, errplus, errminus, limit = analyse(results_sys, final=True)
+    _, best, errplus, errminus, limit = analyse(results_sys)
 
     flux_best = best * flux_fac
     flux_90cl = limit * flux_fac
@@ -1440,7 +1441,7 @@ def combine(results):
     liketot = results[0][:, -1] - results[0][:, -1].max()
     for r in results[1:]:
         liketot += r[:, -1] - r[:, -1].max()
-    return analyse(column_stack((results[0][:,:-1], liketot)), final=True)
+    return analyse(column_stack((results[0][:,:-1], liketot)))
 
 
 def combine_fluxes(results, fluxfacts):
@@ -1457,7 +1458,7 @@ def combine_fluxes(results, fluxfacts):
         flike = interp1d(fluxes, likes, bounds_error=False, fill_value=1e-10)
         newlikes = flike(flux_sampling)
         liketot += newlikes - newlikes.max()
-    return analyse(column_stack((flux_sampling, liketot)), final=True)
+    return analyse(column_stack((flux_sampling, liketot)))
 
 
 def roman_num(num):
@@ -1514,7 +1515,7 @@ def fullike(model, elow, ehigh, elow_sk2=17.5, sk5=False, sk6=False, skip_sk5=Tr
             additional_periods += [6]
             additional_ids += [5]
 
-    for period, period_id in additional_periods:
+    for period, period_id in zip(additional_periods, additional_ids):
         additional_like = maxlike(period, model,
             elow_sk6, ehigh_sk6, elow_sk6_1n,
             rmin, rmax, rstep, quiet=quiet, outdir=outdir,
@@ -1551,8 +1552,8 @@ def fullike(model, elow, ehigh, elow_sk2=17.5, sk5=False, sk6=False, skip_sk5=Tr
                  '-.', label="SK-III", alpha=0.5)
         plt.plot(x, results[3][:, -1] - results[3][:,-1].max(),
                  '--', label="SK-IV",linewidth=2)
-        for period in additional_periods:
-            plt.plot(x, results[period-1][:, -1] - results[period-1][:,-1].max(),
+        for period_id in  additional_ids:
+            plt.plot(x, results[period_id][:, -1] - results[period_id][:,-1].max(),
                  '--', label=f"SK-{roman_num(period)}",linewidth=2)
         # likesum = results[0][:, -1] + results[1][:, -1] + results[2][:, -1] + results[3][:, -1]
         likesum = sum([period_result[:, -1] for period_result in results], axis=0)
@@ -1567,13 +1568,13 @@ def fullike(model, elow, ehigh, elow_sk2=17.5, sk5=False, sk6=False, skip_sk5=Tr
 
     print("")
     print(f"Best fit rate: {ratebest_comb} + {ratepl_comb} - {ratemin_comb}")
-    print("90%% c.l. rate limits are: %f %f %f %f > 16 MeV" % tuple(ratelims))
+    print(f"90%% c.l. rate limits are: {tuple(ratelims)} > 16 MeV")
     print(f"90%% c.l. combined rate limit: {ratelim_comb} > 16 MeV")
     print(f"Predicted rate: {pred_rate}")
 
     print("")
     print(f"Best fit flux: {fluxbest_comb} + {fluxpl_comb} - {fluxmin_comb}")
-    print("90%% c.l. flux limits are: %f %f %f %f /cm^2/s > 17.3 MeV" % tuple(fluxlims))
+    print(f"90%% c.l. flux limits are: {tuple(fluxlims)} /cm^2/s > 17.3 MeV")
     print(f"90%% c.l. combined flux limit: {fluxlim_comb} /cm^2/s > 17.3 MeV")
     print(f"Predicted flux: {pred_flux}")
 

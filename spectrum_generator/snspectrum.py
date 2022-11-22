@@ -28,8 +28,10 @@ def energy_sigma(ee, sknum):
         return -0.123 + 0.376 * sqrt(ee) + 0.0349 * ee
     if sknum == 3:
         return 0.0536 + 0.5200 * sqrt(ee) + 0.0458 * ee
-    if sknum == 4:
+    if sknum >= 4:
         return -0.290 + 0.434 * sqrt(ee) + 0.0320 * ee
+    else:
+        raise ValueError(f"Invalid SK period: {sknum}")
 
 # CCSN rate as a function of redshift
 def snrate(z, imfpars, csfrpars):

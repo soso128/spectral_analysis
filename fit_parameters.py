@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d
 ##### merge with the rest later #####
 #####################################
 ## Change MC files in get_flux_from_mc
-## Update spall PDF parameters
+## Update spall PDF parameters and coeffs
 ## Update energy resolution function (esys_pdf_distorsions.py)
 #####################################
 
@@ -150,6 +150,7 @@ ntag_bg_ps_sk = [None, None, None, ntag_bg_ps, ntag_bg_ps_sk6]
 spacoeffs_sk = array([[0.0105935649, -0.495682897, 7.93209842, -43.5523139],
                      [0.0138280665, -0.749631175, 13.6659053, -83.7150281],
                      [0.0438680847, -2.13974596, 35.1046340, -193.623584],
+                     [0.0103067195, -0.475915126, 7.52829430, -40.9820538],
                      [0.0103067195, -0.475915126, 7.52829430, -40.9820538]])
 #spacoeffs_sk = array([[0.0123007834, -0.579943766, 9.33104800, -51.3586273],
                      #[0.0122423073, -0.665453703, 12.2007772, -75.3689846],
@@ -166,9 +167,9 @@ esys_scale_dict = {}
 esys_res_dict = {}
 
 # Scalings between Cherenkov angle regions (from MC)
-mupi_rescale_low = [1.367, 1.75, 1.34, 1.34] # mupi from low to medium
-mupi_rescale_high = [0.12777, 0.1, 0.13, 0.13] # mupi from low to high
-nc_rescale = [1.16313, 1.42, 1.14, 1.14] # NC from high to medium
+mupi_rescale_low = [1.367, 1.75, 1.34, 1.34, 1.34] # mupi from low to medium
+mupi_rescale_high = [0.12777, 0.1, 0.13, 0.13, 0.13] # mupi from low to high
+nc_rescale = [1.16313, 1.42, 1.14, 1.14, 1.14] # NC from high to medium
 
 # systematics multipliers
 nc_mult = 1
