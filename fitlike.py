@@ -1461,26 +1461,66 @@ def combine_fluxes(results, fluxfacts):
     return analyse(column_stack((flux_sampling, liketot)), final=True)
 
 
-def fullike(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
-            rmin=-5, rmax=100, rstep=0.1, quiet=False, outdir='.', systematics = 1, use_spall = False):
-    """ Fit SK I-IV data """
-    if elow_sk4 is None:
-        elow_sk4 = elow
-    if elow_sk4_1n is None:
-        elow_sk4_1n = elow
-    if ehigh_sk4 is None:
-        ehigh_sk4 = ehigh
+def roman_num(num):
+    "Convert int digit to roman numeral string"
+    if num == 1: return "I"
+    if num == 2: return "II"
+    if num == 3: return "III"
+    if num == 4: return "IV"
+    if num == 5: return "V"
+    if num == 6: return "VI"
+    if num == 7: return "VII"
+    if num == 8: return "VIII"
+
+def fullike(model, elow, ehigh, elow_sk2=17.5, sk5=False, sk6=False, skip_sk5=True,
+            elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
+            elow_sk6=None, ehigh_sk6=None, elow_sk6_1n=None,
+            rmin=-5, rmax=100, rstep=0.1,
+            quiet=False, outdir='.', systematics=1, use_spall=False):
+    """ Apply spectral fitting on chosen SK periods and combine results. """
+    
+    # Default SK-IV and SK-VI thresholds are the same as SK-I and SK-III
+    if elow_sk4 is None: elow_sk4 = elow
+    if elow_sk4_1n is None: elow_sk4_1n = elow
+    if ehigh_sk4 is None: ehigh_sk4 = ehigh
+    if elow_sk6 is None: elow_sk6 = elow
+    if elow_sk6_1n is None: elow_sk6_1n = elow
+    if ehigh_sk6 is None: ehigh_sk6 = ehigh
+
+    # Apply spectral fitting on each period
     like1 = maxlike(1, model, elow, ehigh, elow_sk4_1n, rmin, rmax,
-                    rstep, quiet=quiet, outdir=outdir, systematics = systematics, use_spall = use_spall)
+                    rstep, quiet=quiet, outdir=outdir, systematics=systematics, use_spall=use_spall)
     like2 = maxlike(2, model, elow_sk2, ehigh, elow_sk4_1n, rmin, rmax,
-                    rstep, quiet=quiet, outdir=outdir, systematics = systematics, use_spall = use_spall)
+                    rstep, quiet=quiet, outdir=outdir, systematics=systematics, use_spall=use_spall)
     like3 = maxlike(3, model, elow, ehigh, elow_sk4_1n, rmin, rmax,
-                    rstep, quiet=quiet, outdir=outdir, systematics = systematics, use_spall = use_spall)
+                    rstep, quiet=quiet, outdir=outdir, systematics=systematics, use_spall=use_spall)
     like4 = maxlike(4, model, elow_sk4, ehigh_sk4, elow_sk4_1n, rmin, rmax,
-                    rstep, quiet=quiet, outdir=outdir, systematics = systematics, use_spall = use_spall)
-    fluxlims = [like1[0], like2[0], like3[0], like4[0]]
-    fluxfacs = [like1[1], like2[1], like3[1], like4[1]]
-    results = [like1[2], like2[2], like3[2], like4[2]]
+                    rstep, quiet=quiet, outdir=outdir, systematics=systematics, use_spall=use_spall)
+    like_list = [like1, like2, like3, like4]
+
+    # Apply additional fits beyond SK-IV if specified
+    # Currently, no SK-V analysis has been carried out.
+    # Because of this, it is skipped in this analysis (skip_sk5=True).
+    # If SK-V is skipped, SK-VI will be identified with the number 5
+    # Get the additional period numbers
+    additional_periods = []
+    if skip_sk5:
+        if sk6: additional_periods += [5]
+    else:
+        if sk5: additional_periods += [5]
+        if sk6: additional_periods += [6]
+
+    for period in additional_periods:
+        additional_like = maxlike(period, model,
+            elow_sk6, ehigh_sk6, elow_sk6_1n,
+            rmin, rmax, rstep, quiet=quiet, outdir=outdir,
+            systematics=systematics, use_spall=use_spall)
+        like_list += [additional_like]
+
+
+    fluxlims = [lk[0] for lk in like_list]
+    fluxfacs = [lk[1] for lk in like_list]
+    results = [lk[2] for lk in like_list]
     rate = arange(0, rmax, rstep)
     for i,r in enumerate(results):
         flike = interp1d(r[:, -2], r[:, -1], bounds_error = False, fill_value = r[:, -1].min())
@@ -1507,13 +1547,16 @@ def fullike(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=None, 
                  '-.', label="SK-III", alpha=0.5)
         plt.plot(x, results[3][:, -1] - results[3][:,-1].max(),
                  '--', label="SK-IV",linewidth=2)
-        likesum = results[0][:, -1] + results[1][:, -1] + results[2][:, -1] + results[3][:, -1]
+        for period in additional_periods:
+            plt.plot(x, results[period-1][:, -1] - results[period-1][:,-1].max(),
+                 '--', label=f"SK-{roman_num(period)}",linewidth=2)
+        # likesum = results[0][:, -1] + results[1][:, -1] + results[2][:, -1] + results[3][:, -1]
+        likesum = sum([period_result[:, -1] for period_result in results], axis=0)
         likesum -= likesum.max()
         plt.plot(x, likesum, label = "Combined", color = 'black')
         plt.plot([0,20], -0.5 * ones(2), 'r')
         plt.xlim(0,20)
         plt.ylim(-2,0.2)
-        # plt.grid()
         plt.legend()
         plt.savefig(outdir + "/full_like.pdf")
         plt.clf()
@@ -1708,9 +1751,15 @@ if __name__ == "__main__":
     ### ---------------------------------------------------------------
 
     ### Optional arguments --------------------------------------------
+    # SK periods
+    parser.add_argument('--sk5', help="Include SK5 period (currently unavailable)", type=int, default=0)
+    parser.add_argument('--sk6', help="Include SK6 period", type=int, default=0)
+
     # Energy thresholds
     parser.add_argument('--thr', help='SK4 Energy threshold (non-IBD region)', type=float, default=16)
     parser.add_argument('--thr1n', help='SK4 Energy threshold (IBD region)', type=float, default=16)
+    parser.add_argument('--thr_sk6', help='SK6 Energy threshold (non-IBD region)', type=float, default=16)
+    parser.add_argument('--thr1n_sk6', help='SK6 Energy threshold (IBD region)', type=float, default=16)
 
     # DSNB event number sampling
     parser.add_argument('--rmin', help="Minimum number of DSNB events sampled", type=float, default=-5.)
@@ -1719,13 +1768,9 @@ if __name__ == "__main__":
 
     # Backgrounds considered
     parser.add_argument('--spall', help='Add spallation backgrounds (0/1, default: 0)', type=int, default=0)
-    parser.add_argument('--nonc', help='Assume no NC background (0/1, default: 0)', type=int, default=0)
-
 
     # Systematic uncertainties
     parser.add_argument('--sys', help='systematics mode [-1, 0, 1, or 2]', type=int, default = 1)
-    parser.add_argument('--ncsys_scale', help="NC systematics scaling", type=float, default=1.)
-    parser.add_argument('--ineff_scale', help="Signal inefficiency scaling", type=float, default=1.)
 
     # Plotting
     parser.add_argument('--quiet', help='Do not save plot of fit', type=int, default=0)
@@ -1738,33 +1783,67 @@ if __name__ == "__main__":
     parser.add_argument('--toy_lt', help='Toy dataset: livetime in days (default: 10yrs)', type=float, default=3652.5)
     parser.add_argument('--toy_triglo', help="Toy dataset: SK-Gd neutron search window start time", type=float, default=1.)
     parser.add_argument('--toy_trighi', help="Toy dataset: SK-Gd neutron search window end time", type=float, default=535.)
+    parser.add_argument('--toy_nonc', help='Toy_dataset: Assume no NC background (0/1, default: 0)', type=int, default=0)
+    parser.add_argument('--toy_ncsys_scale', help="Toy_dataset: NC systematics scaling", type=float, default=1.)
+    parser.add_argument('--toy_ineff_scale', help="Toy_dataset: Signal inefficiency scaling", type=float, default=1.)
     # -----------------------------------------------------------------
 
     args = parser.parse_args()
 
     start_time = time()
+
+    # Perform an SK4-like fit on an SK-Gd toy dataset,
+    # rescaling PDFs accordingly
     if args.toy:
-        # Perform an SK4 on an SK-Gd toy dataset, rescaling PDFs accordingly
-        # quiet = False
         livetimes[3] = args.toy_lt # Modify livetime used in fit 
         gd_fraction = args.toy_gd
         if gd_fraction == -1:
             gd_fraction = None
-        sk4like(args.modelname, elow_sk4=args.thr, ehigh_sk4=80, elow_sk4_1n=args.thr1n,
-            outdir=args.directory, toydir=args.toy, systematics=args.sys,
-            gd_frac=gd_fraction, use_spall=args.spall, no_nc=args.nonc,
-            quiet=args.quiet, rmin=args.rmin, rmax=args.rmax, rstep=args.rstep,
-            trig_lo=args.toy_triglo, trig_hi=args.toy_trighi,
-            ineff_scale=args.ineff_scale, ncsys_scale=args.ncsys_scale)
+
+        sk4like(args.modelname, outdir=args.directory,
+
+            # Energy thresholds
+            elow_sk4=args.thr, ehigh_sk4=80, elow_sk4_1n=args.thr1n,
+
+            # Fit options
+            systematics=args.sys, use_spall=args.spall, quiet=args.quiet,
+            rmin=args.rmin, rmax=args.rmax, rstep=args.rstep,
+
+            # Toy dataset options
+            toydir=args.toy, 
+            gd_frac=gd_fraction, trig_lo=args.toy_triglo, trig_hi=args.toy_trighi,
+            no_nc=args.toy_nonc, ncsys_scale=args.toy_ncsys_scale,
+            ineff_scale=args.toy_ineff_scale
+            )
+
+    # Plot fit results on already-completed fit
     elif args.drawonly:
-        plot_results(args.modelname, elow=16, ehigh=90, elow_sk2=16,
+        plot_results(args.modelname, outdir=args.directory,
+        
+            # Energy range of plot
+            elow=16, ehigh=90, elow_sk2=16,
             elow_sk4=args.thr, ehigh_sk4=80, elow_sk4_1n=args.thr1n,
-            outdir=args.directory, use_spall=args.spall)
+
+            # Plot spallation
+            use_spall=args.spall
+            )
+    
+    # Regular spectral fit on SK-I-II-III-IV+
     else:
-        fullike(args.modelname, elow=16, ehigh=90, elow_sk2=17.5,
+        fullike(args.modelname, outdir=args.directory,
+
+            # SK periods
+            sk5=args.sk5, sk6=args.sk6,
+
+            # Energy thresholds
+            elow=16, ehigh=90, elow_sk2=17.5,
             elow_sk4=args.thr, ehigh_sk4=80, elow_sk4_1n=args.thr1n,
-            outdir=args.directory, systematics=args.sys, use_spall=args.spall,
-            quiet=args.quiet, rmin=args.rmin, rmax=args.rmax, rstep=args.rstep)
+            elow_sk6=args.thr_sk6, ehigh_sk6=80, elow_sk6_1n=args.thr1n_sk6,
+
+            # Fit options
+            systematics=args.sys, use_spall=args.spall,
+            quiet=args.quiet, rmin=args.rmin, rmax=args.rmax, rstep=args.rstep
+            )
     
     end_time = time()
     elapsed_time = end_time - start_time
