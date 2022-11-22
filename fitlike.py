@@ -1701,56 +1701,69 @@ def sk4like(model, elow_sk4, ehigh_sk4, elow_sk4_1n=None, toydir=None,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+
+    ### Positional arguments ------------------------------------------
     parser.add_argument('modelname', help="DNSB model name")
     parser.add_argument('directory', help='Fit output directory')
-    parser.add_argument('--sys', help='systematics mode [-1, 0, 1, or 2]', type=int, default = 1)
+    ### ---------------------------------------------------------------
+
+    ### Optional arguments --------------------------------------------
+    # Energy thresholds
     parser.add_argument('--thr', help='SK4 Energy threshold (non-IBD region)', type=float, default=16)
     parser.add_argument('--thr1n', help='SK4 Energy threshold (IBD region)', type=float, default=16)
-    parser.add_argument('--toy', help='Toy dataset location (replaces data)')
-    parser.add_argument('--gd', help=('Specify Gd neutron capture fraction,'
-                                      ' otherwise pure water is assumed'), type=float, default=-1)
-    parser.add_argument('--lt', help='Toy dataset livetime in days (default: 10yrs)', type=float, default=3652.5)
+
+    # DSNB event number sampling
+    parser.add_argument('--rmin', help="Minimum number of DSNB events sampled", type=float, default=-5.)
+    parser.add_argument('--rmax', help="Maximum number of DSNB events sampled", type=float, default=100.)
+    parser.add_argument('--rstep', help="DSNB event number sampling step size", type=float, default=0.1)
+
+    # Backgrounds considered
     parser.add_argument('--spall', help='Add spallation backgrounds (0/1, default: 0)', type=int, default=0)
     parser.add_argument('--nonc', help='Assume no NC background (0/1, default: 0)', type=int, default=0)
-    parser.add_argument('--rmin', help="Minimum rate sampled", type=float, default=-5.)
-    parser.add_argument('--rmax', help="Maximum rate sampled", type=float, default=100.)
-    parser.add_argument('--rstep', help="Rate sampling step size", type=float, default=0.1)
-    parser.add_argument('--triglo', help="SK-Gd trigger window start time", type=float, default=1.)
-    parser.add_argument('--trighi', help="SK-Gd trigger window end time", type=float, default=535.)
-    parser.add_argument('--ineff_scale', help="Signal inefficiency scaling", type=float, default=1.)
+
+
+    # Systematic uncertainties
+    parser.add_argument('--sys', help='systematics mode [-1, 0, 1, or 2]', type=int, default = 1)
     parser.add_argument('--ncsys_scale', help="NC systematics scaling", type=float, default=1.)
+    parser.add_argument('--ineff_scale', help="Signal inefficiency scaling", type=float, default=1.)
+
+    # Plotting
     parser.add_argument('--quiet', help='Do not save plot of fit', type=int, default=0)
     parser.add_argument('--drawonly', help='Redraw plots from fit result file (0/1, default: 0)', type=int, default=0)
-    args = parser.parse_args()
+    
+    # Toy dataset fit options
+    parser.add_argument('--toy', help='Toy dataset location (replaces data)')
+    parser.add_argument('--toy_gd', help=('Toy dataset: specify Gd neutron capture fraction,'
+                                      ' otherwise pure water is assumed'), type=float, default=-1)
+    parser.add_argument('--toy_lt', help='Toy dataset: livetime in days (default: 10yrs)', type=float, default=3652.5)
+    parser.add_argument('--toy_triglo', help="Toy dataset: SK-Gd neutron search window start time", type=float, default=1.)
+    parser.add_argument('--toy_trighi', help="Toy dataset: SK-Gd neutron search window end time", type=float, default=535.)
+    # -----------------------------------------------------------------
 
-    modelname = args.modelname
-    directory = args.directory
-    systematics = args.sys
-    e_thr = args.thr
-    e_thr_1n = args.thr1n
+    args = parser.parse_args()
 
     start_time = time()
     if args.toy:
-        toy_data_dir = args.toy
+        # Perform an SK4 on an SK-Gd toy dataset, rescaling PDFs accordingly
         # quiet = False
-        livetimes[3] = args.lt
-        gd_fraction = args.gd
+        livetimes[3] = args.toy_lt # Modify livetime used in fit 
+        gd_fraction = args.toy_gd
         if gd_fraction == -1:
             gd_fraction = None
-        sk4like(modelname, elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
-            outdir=directory, toydir=toy_data_dir, systematics=systematics,
+        sk4like(args.modelname, elow_sk4=args.thr, ehigh_sk4=80, elow_sk4_1n=args.thr1n,
+            outdir=args.directory, toydir=args.toy, systematics=args.sys,
             gd_frac=gd_fraction, use_spall=args.spall, no_nc=args.nonc,
             quiet=args.quiet, rmin=args.rmin, rmax=args.rmax, rstep=args.rstep,
-            trig_lo=args.triglo, trig_hi=args.trighi,
+            trig_lo=args.toy_triglo, trig_hi=args.toy_trighi,
             ineff_scale=args.ineff_scale, ncsys_scale=args.ncsys_scale)
     elif args.drawonly:
-        plot_results(modelname, elow=16, ehigh=90, elow_sk2=16,
-            elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
-            outdir=directory, use_spall=args.spall)
+        plot_results(args.modelname, elow=16, ehigh=90, elow_sk2=16,
+            elow_sk4=args.thr, ehigh_sk4=80, elow_sk4_1n=args.thr1n,
+            outdir=args.directory, use_spall=args.spall)
     else:
-        fullike(modelname, elow=16, ehigh=90, elow_sk2=17.5,
-            elow_sk4=e_thr, ehigh_sk4=80, elow_sk4_1n=e_thr_1n,
-            outdir=directory, systematics=systematics, use_spall=args.spall,
+        fullike(args.modelname, elow=16, ehigh=90, elow_sk2=17.5,
+            elow_sk4=args.thr, ehigh_sk4=80, elow_sk4_1n=args.thr1n,
+            outdir=args.directory, systematics=args.sys, use_spall=args.spall,
             quiet=args.quiet, rmin=args.rmin, rmax=args.rmax, rstep=args.rstep)
     
     end_time = time()
