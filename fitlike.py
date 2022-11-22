@@ -882,14 +882,12 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0,
                             array([nrelic, -maxlike[1]])])
 
 
-def analyse(likes, final=False):
+def analyse(likes):
     """ Extract limits """
     lmax = likes[:, -1].max()
     bestpos = likes[:, -1].argmax()
     rel = likes[:, -2]
     best = rel[bestpos]
-    # print(lmax)
-    # print((likes[:, -1] - lmax).dtype)
     norm = exp(likes[:, -1] - lmax).sum()
     errminus = best - rel[searchsorted(likes[:bestpos, -1], lmax - 0.5)]
     errplus = rel[len(likes) - 1 - searchsorted(likes[bestpos:, -1][::-1], lmax - 0.5)] - best
@@ -897,8 +895,9 @@ def analyse(likes, final=False):
     return lmax, best, errplus, errminus, l90
 
 
-def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, elow, ehigh, elow_1n,
-            samples, nrelic = 0, nspall = 0, samples_n=None, signal=None, background=None, use_spall = False):
+def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, sk_id, elow, ehigh, elow_1n,
+            samples, nrelic=0, nspall=0, samples_n=None,
+            signal=None, background=None, use_spall=False):
     """ Plot spectral fit """
     def plotregion(region, data, ax, elow=elow, ntag=None):
         #plt.figure()
@@ -981,9 +980,10 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, elow, ehigh, elow_1n,
             sklabels = ["SK-I\n1497 days",
                         "SK-II\n794 days",
                         "SK-III\n562 days",
-                        "SK-IV\n2970 days"]
+                        "SK-IV\n2970 days",
+                        "SK-VI\n522 days"]
             yshift = 0.76 if ntag is not None else 0.8
-            ax.text(0.88,yshift, sklabels[sknum-1], size=30,
+            ax.text(0.88,yshift, sklabels[sk_id], size=30,
                         transform=ax.transAxes, weight="bold",
                         horizontalalignment='right')
         
@@ -1144,7 +1144,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                                 [low_1n, med_1n, high_1n], sys=-1)
         return likemax
 
-    def applysys(likes, eff, rmin, rmax, rstep, sysfact = 0, maxeff=1.0):
+    def applysys(likes, eff, rmin, rmax, rstep, sysfact=0, maxeff=1.0):
         ''' Apply gaussian systematic efficiency error correction'''
         print(f"Signal efficiency is {eff}")
         syseff = sqrt(sys_eff[sknum - 1]**2 + sysfact**2 * sys_eff_sk4_ntag**2)
@@ -1376,7 +1376,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         likedata = []
         rmin = 0
         #bkglist = [nue, numu, nc, mupi, spall] if use_spall else [nue, numu, nc, mupi]
-        print(f"Livetime is {livetimes[3]}")
+        print(f"Livetime is {livetimes[sk_id]}")
         for i,rel in enumerate(arange(rmin, rmax, rstep)):
             likeres = getmaxlike_sk4(rel, array(bkglist),
                             [pdfs_low, pdfs_med, pdfs_high],
@@ -1426,7 +1426,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         nrelic = results_sys[lpos,6] if use_spall else results_sys[lpos,5] 
         nspall = results_sys[lpos,5] if use_spall else 0 
         plotfit(results_sys[lpos,1], results_sys[lpos,2], results_sys[lpos,3],
-                results_sys[lpos,4], model, sknum,
+                results_sys[lpos,4], model, sknum, sk_id,
                 elow, ehigh, elow_1n, samples=[samplow, sampmed, samphigh],
                 samples_n=samples_n, signal=signal, background=bgs_sk4, use_spall = use_spall,
                nrelic = nrelic, nspall = nspall)
@@ -1527,7 +1527,7 @@ def fullike(model, elow, ehigh, elow_sk2=17.5, sk5=False, sk6=False, skip_sk5=Tr
     results = [lk[2] for lk in like_list]
     rate = arange(0, rmax, rstep)
     for i,r in enumerate(results):
-        flike = interp1d(r[:, -2], r[:, -1], bounds_error = False, fill_value = r[:, -1].min())
+        flike = interp1d(r[:, -2], r[:, -1], bounds_error=False, fill_value = r[:, -1].min())
         results[i] = column_stack((rate, flike(rate)))
     pred_rate = like1[3]
     pred_flux = like1[4]
@@ -1684,7 +1684,7 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
             nrel = rates_relic[sknum - 1] * effsignal * livetimes[sknum - 1]/365.25
             print(f"sample: {(sampmed < 18).sum()} {elow} {sknum}")
             plotfit(nnue[sknum - 1], nnumu[sknum - 1], nnc[sknum - 1], 
-                    nmupi[sknum - 1], model[sknum - 1], sknum,
+                    nmupi[sknum - 1], model[sknum - 1], sknum, sk_id,
                     elow, ehigh, elow_sk4_1n, samples=[samplow, sampmed, samphigh],
                     samples_n=samples_n, signal=signal, background=bgs_sk4, use_spall = use_spall,
                    nrelic = nrel, nspall = nspall[sknum - 1])
