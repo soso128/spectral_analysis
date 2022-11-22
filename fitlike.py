@@ -642,17 +642,17 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0, u
         if ncce < 0 or nccmu < 0:
             return -1e10
         nevents = array([ncce, nccmu] + list(nbkgs) + [nrelic])
-        totlike = log((nevents * pdfs_med).sum(axis = 1)).sum() - nevents.sum()
+        totlike = log((nevents * pdfs_med).sum(axis=1)).sum() - nevents.sum()
         return totlike
 
     def get_like_nosys(nbackgrounds):
-        ''' Likelihood with systematics on atm spectral shapes'''
+        ''' Likelihood without systematics on atm spectral shapes'''
         if nbackgrounds.min() < 0:
             return -1e10
         nevents = array(list(nbackgrounds) + [nrelic])
-        totlike = (log(dot(nevents,pdfs_low.T)).sum(axis = 0)
-                   + log(dot(nevents,pdfs_med.T)).sum(axis = 0)
-                   + log(dot(nevents,pdfs_high.T)).sum(axis = 0)
+        totlike = (log(dot(nevents,pdfs_low.T)).sum(axis=0)
+                   + log(dot(nevents,pdfs_med.T)).sum(axis=0)
+                   + log(dot(nevents,pdfs_high.T)).sum(axis=0)
                    - nrelic - nbackgrounds.sum()) # maybe double counting?
         if isnan(totlike): raise ValueError("nan")
         return totlike
@@ -665,9 +665,9 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0, u
         wgauss2 = asym_gaussian() if sknum < 4 else 0.20997 * exp(-arange(-2,2.5,0.5)**2/2.)
         nevents = array(list(nbackgrounds) + [nrelic])
         indexstring = "j,ijklm" if use_spall else "j,ijkl"
-        totlike = (log(einsum(indexstring, nevents, pdfs_high)).sum(axis = 0)
-                   + log(dot(nevents,pdfs_low.T)).sum(axis = 0)
-                   + log(einsum(indexstring, nevents, pdfs_med)).sum(axis = 0)
+        totlike = (log(einsum(indexstring, nevents, pdfs_high)).sum(axis=0)
+                   + log(dot(nevents,pdfs_low.T)).sum(axis=0)
+                   + log(einsum(indexstring, nevents, pdfs_med)).sum(axis=0)
                    - nrelic - nbackgrounds.sum()) # maybe double counting?
         totmax = totlike.max()
         if use_spall:
@@ -681,9 +681,9 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0, u
         if nbackgrounds.min() < 0:
             return -1e10
         nevents = array(list(nbackgrounds) + [nrelic])
-        totlike = (log(einsum("j,ijk", nevents, pdfs_high)).sum(axis = 0)
-                   + log(einsum("j,ijk", nevents, pdfs_med)).sum(axis = 0)
-                   + log(einsum("j,ijk", nevents, pdfs_low)).sum(axis = 0)
+        totlike = (log(einsum("j,ijk", nevents, pdfs_high)).sum(axis=0)
+                   + log(einsum("j,ijk", nevents, pdfs_med)).sum(axis=0)
+                   + log(einsum("j,ijk", nevents, pdfs_low)).sum(axis=0)
                    - nrelic - nbackgrounds.sum()) # maybe double counting?
         totmax = totlike.max()
         gauss = exp(-arange(-4,4.5,0.5)**2/2)
@@ -694,19 +694,19 @@ def getmaxlike(nrelic, nback_ini, pdfs_low, pdfs_med, pdfs_high, sknum, sys=0, u
     funclike = None
     if sys == 1:
         funclike = lambda nback: -get_like(nback)
-        maxlike = fmin(funclike, nback_ini, full_output = True, disp = 0)
+        maxlike = fmin(funclike, nback_ini, full_output=True, disp=0)
         return append(maxlike[0], array([nrelic, -maxlike[1]]))
     if sys == 2:
         funclike = lambda nback: -get_like_esys(nback)
-        maxlike = fmin(funclike, nback_ini, full_output = True, disp = 0)
+        maxlike = fmin(funclike, nback_ini, full_output=True, disp=0)
         return append(maxlike[0], array([nrelic, -maxlike[1]]))
     if sys == 0:
         funclike = lambda nback: -get_like_nosys(nback)
-        maxlike = fmin(funclike, nback_ini, full_output = True, disp = 0)
+        maxlike = fmin(funclike, nback_ini, full_output=True, disp=0)
         return append(maxlike[0], array([nrelic, -maxlike[1]]))
     if sys == -1:
         funclike = lambda nback: -get_like_init(nback, *nback_ini[1:])
-        maxlike = fmin(funclike, nback_ini[0], full_output = True, disp = 0)
+        maxlike = fmin(funclike, nback_ini[0], full_output=True, disp=0)
         ntot = len(pdfs_low) + len(pdfs_high) + len(pdfs_med)
         nccmu = ntot - maxlike[0] - sum(nback_ini) - nrelic
         return concatenate([array([maxlike[0][0], nccmu]), nback_ini[1:],
@@ -732,7 +732,7 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0,
         if ncce < 0 or nccmu < 0:
             return -1e10
         nevents = array([ncce, nccmu] + list(nbkgs) + [nrelic])
-        totlike = log((nevents * pdfs_med).sum(axis = 1)).sum() - nevents.sum()
+        totlike = log((nevents * pdfs_med).sum(axis=1)).sum() - nevents.sum()
         return totlike
 
     def get_like_nosys_sk4(nbackgrounds):
@@ -811,12 +811,12 @@ def getmaxlike_sk4(nrelic, nback_ini, pdfs, pdfs_1n, sys=0,
             return -1e10
         wgauss = asym_gaussian()
         nevents = array(list(nbackgrounds) + [nrelic])
-        totlike = (log(einsum("j,ijk", nevents, pdfs_low)).sum(axis = 0)
-                   + log(einsum("j,ijk", nevents, pdfs_low_1n)).sum(axis = 0)
-                   + log(dot(nevents,pdfs_med.T)).sum(axis = 0)
-                   + log(dot(nevents,pdfs_med_1n.T)).sum(axis = 0)
-                   + log(dot(nevents,pdfs_high.T)).sum(axis = 0)
-                   + log(dot(nevents,pdfs_high_1n.T)).sum(axis = 0)
+        totlike = (log(einsum("j,ijk", nevents, pdfs_low)).sum(axis=0)
+                   + log(einsum("j,ijk", nevents, pdfs_low_1n)).sum(axis=0)
+                   + log(dot(nevents,pdfs_med.T)).sum(axis=0)
+                   + log(dot(nevents,pdfs_med_1n.T)).sum(axis=0)
+                   + log(dot(nevents,pdfs_high.T)).sum(axis=0)
+                   + log(dot(nevents,pdfs_high_1n.T)).sum(axis=0)
                    - nrelic - nbackgrounds.sum()) # maybe double counting?
         totmax = totlike.max()
         likenew = log((exp(totlike - totmax) * wgauss).sum()) + totmax
@@ -1165,7 +1165,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         rates = arange(rmin, rmax, rstep)
         lconv = flikes(rates[:, newaxis] * epsrange[newaxis, :] * livetimes[sknum - 1]/365.25)
         simpsoncoeff = array([step/3.] + list((1 + (arange(1,1000)%2))*2./3 * step) + [step/3.])
-        ltot = (lconv * (pgaus * epsrange * simpsoncoeff)).sum(axis = 1)
+        ltot = (lconv * (pgaus * epsrange * simpsoncoeff)).sum(axis=1)
         # print("negativity of ltot", any(ltot<=0))
         likenew = log(ltot) + lmax
         like_rate = interp1d(rates, likenew)
