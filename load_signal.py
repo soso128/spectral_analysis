@@ -2,6 +2,7 @@ from numpy import *
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from sys import path
+from ast import literal_eval
 
 
 from fit_parameters import *
@@ -10,7 +11,7 @@ import snspectrum as sns
 import get_flux_from_mc as gtmc
 from pdf_sk4 import  relic_sk
 
-def load_signal_pdf(sknum, model, elow, ehigh, elow_1n, ineff_scale=1.0):
+def load_signal_pdf(sknum, sk_id, model, elow, ehigh, elow_1n, ineff_scale=1.0):
     ''' Load relic signal model pdfs, either from a discrete (named) model
     or a parametric model. '''
 
@@ -19,27 +20,26 @@ def load_signal_pdf(sknum, model, elow, ehigh, elow_1n, ineff_scale=1.0):
         (No solar cut with ntag) '''
         if (not ntag and en < elow) or (ntag and en < elow_1n):
             return 0
-        eff3 = effs_3rdred[sknum - 1](en)
+        eff3 = effs_3rdred[sk_id](en)
         if ntag:
             if sknum < 4:
                 raise ValueError(f"SK-{sknum} does not have ntag")
-            spa = spaeff_sk4
+            spa = spaeff_ntag[sk_id]
             effspa = lambda x: 1.0 if x < spa[0,0] else spa[(spa[:, 0] <= x), -1][-1]
             tot_seff = eff3 * effspa(en)
             return tot_seff + (1-tot_seff)*(1-ineff_scale)
         else:
-            spa = spaeff[sknum - 1]
-            sol = soleff[sknum - 1]
+            spa = spaeff[sk_id]
+            sol = soleff[sk_id]
             effspa = lambda x: 1.0 if x < spa[0,0] else spa[(spa[:, 0] <= x), -1][-1]
             effsol = lambda x: 1.0 if x < sol[0,0] else sol[(sol[:, 0] <= x), -1][-1]
             tot_seff = eff3 * effspa(en) * effsol(en)
             return tot_seff + (1-tot_seff)*(1-ineff_scale)
-        return 0
 
     def relic(en, spec):
         eff_func_nontag = lambda z: seff_sk(z, ntag=False)
         if sknum < 4:
-            return relic_sk(sknum, en, spec, s_ch_frac, eff_func_nontag,
+            return relic_sk(sknum, en, spec, s_ch_fracs[sk_id], eff_func_nontag,
                             elow=elow, ehigh=ehigh)
         else:
             # print("ntag_effs:", ntag_effs * ntag_eff_ps)
@@ -47,11 +47,11 @@ def load_signal_pdf(sknum, model, elow, ehigh, elow_1n, ineff_scale=1.0):
             # print("ntag_eff_ps:", ntag_eff_ps)
             # print("ntag_bg_ps:", ntag_bg_ps)
             eff_func_ntag = lambda z: seff_sk(z, ntag=True)
-            return relic_sk(sknum, en, spec, s_ch_frac, eff_func_nontag,
-                            eff_func_ntag, elow=elow, ehigh=ehigh,
-                            elow_n=elow_1n, ntag_ebins=ntag_ebins,
-                            ntag_effs=ntag_effs, ntag_bgs=ntag_bgs,
-                            ntag_eff_ps=ntag_eff_ps, ntag_bg_ps=ntag_bg_ps)
+            return relic_sk(sknum, en, spec, s_ch_fracs[sk_id], eff_func_nontag,
+                eff_func_ntag, elow=elow, ehigh=ehigh,
+                elow_n=elow_1n, ntag_ebins=ntag_ebins_sk[sk_id],
+                ntag_effs=ntag_effs_sk[sk_id], ntag_bgs=ntag_bgs_sk[sk_id],
+                ntag_eff_ps=ntag_eff_ps_sk[sk_id], ntag_bg_ps=ntag_bg_ps_sk[sk_id])
 
     def spec_flux(flux, low, high, smear=True):
         """ Return spectrum given neutrino flux,

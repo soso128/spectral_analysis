@@ -59,13 +59,13 @@ def firstred(f, sknum):
     ovaq = (f[:, 0] > -1) if sknum == 1 else (f[:, 6] > 0.25)
     return f[fv & ovaq & (f[:, 5] > 0.5) & (f[:, 0] < 9000)]
 
-def smeared_spec_from_mc(energ, rates, sknum, eup = 90):
+def smeared_spec_from_mc(energ, rates, sknum, eup=90):
     #energ = arange(1,eup,0.1)
     ## Get rate for model
     #fflux = loadtxt(f"../models/flux_cross_{model}.dat")
     #fluxfunc = interp1d(fflux[:, 0], fflux[:, 1], bounds_error = False, fill_value = 0)
     #rates = array([sn.ibd_spectrum_flux(en,fflux) for en in energ])
-    rate_func = interp1d(energ, rates, bounds_error = False, fill_value = 0)
+    rate_func = interp1d(energ, rates, bounds_error=False, fill_value=0)
     f = None
     blackbody_func = None
     if sknum < 4:

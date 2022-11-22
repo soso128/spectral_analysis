@@ -248,7 +248,7 @@ class relic_sk:
         self.ntag_bgs = array(ntag_bgs)
         self.ntag_bg_ps = ntag_bg_ps
 
-        if sknum == 4:
+        if sknum >= 4:
             ntagvars = [efficiency_func_n, ntag_ebins, ntag_effs,
                         ntag_bgs, ntag_eff_ps, ntag_bg_ps]
             for nv in ntagvars:
@@ -310,7 +310,7 @@ class relic_sk:
         ''' Unnormed pdf '''
         ch_frac = self.cherenkov_frac[region]
         res = self.spec(energy) * ch_frac
-        if self.sknum == 4:
+        if self.sknum >= 4:
             ebin = digitize(energy, self.ntag_ebins) - 1
             n_frac = self.nregions_frac[ntag][ebin]
             res *= n_frac
@@ -352,7 +352,7 @@ class relic_sk:
         # print(eff)
         ch_frac = self.cherenkov_frac[region]
         res = self.spec(energy) * eff * ch_frac
-        if self.sknum == 4:
+        if self.sknum >= 4:
             ebin = digitize(energy, self.ntag_ebins) - 1
             n_frac = self.nregions_frac[ntag][ebin]
             res *= n_frac

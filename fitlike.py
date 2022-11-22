@@ -1023,15 +1023,15 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, elow, ehigh, elow_1n,
 
 
 def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
-            rstep=0.1, quiet=True, outdir='.', systematics = 1,
+            rstep=0.1, quiet=True, outdir='.', systematics=1,
             sk4toydir=None, gd_frac=None, use_spall=False, no_nc=False,
-            trig_lo=1., trig_hi=535., ineff_scale=1.0):
+            trig_lo=1., trig_hi=535., ineff_scale=1.0, sk_id=None):
     '''
     Main maximum likelihood function
-    sknum = 1,2,3 (SK phase)
+    sknum = 1,2,3,4,5,6 (SK phase)
     model = SRN model
-    elow = energy threshold (here, 16MeV)
-    rmin, rmax, rstep = range and step of numbers of relic events for likelihood maximization
+    elow = energy threshold
+    rmin, rmax, rstep = range and step of number of DSNB events for likelihood maximization
     '''
 
     def load_sample(ntag=False):
@@ -1045,14 +1045,9 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                 med = med[(med > elow_1n) & (med < ehigh)]
                 high = high[(high > elow_1n) & (high < ehigh)]
             else:
-                #if sknum < 4:
                 low = loadtxt("sk{}/samplelow.txt".format(int(sknum)))[:, 1]
                 med = loadtxt("sk{}/samplemed.txt".format(int(sknum)))[:, 1]
                 high = loadtxt("sk{}/samplehigh.txt".format(int(sknum)))[:, 1]
-                #if sknum == 4:
-                    #low = loadtxt("sk{}/tight/samplelow.txt".format(int(sknum)))[:, 1]
-                    #med = loadtxt("sk{}/tight/samplemed.txt".format(int(sknum)))[:, 1]
-                    #high = loadtxt("sk{}/tight/samplehigh.txt".format(int(sknum)))[:, 1]
                 low = low[(low > elow) & (low < ehigh)]
                 med = med[(med > elow) & (med < ehigh)]
                 high = high[(high > elow) & (high < ehigh)]
@@ -1079,7 +1074,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         bins = []
         effs = []
         if sknum < 4 or not ntag:
-            spa = spaeff[sknum- 1]
+            spa = spaeff[sknum - 1]
             sol = soleff[sknum - 1]
             spabins = spa[:, 0]
             solbins = sol[:, 0]
@@ -1088,9 +1083,9 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
             bins = array(list(set(sorted(append(spabins, solbins)))))
             effs = vectorize(effspa)(bins) * vectorize(effsol)(bins)
             bins = list(bins) + [90.]
-        elif sknum == 4 and ntag:
-            bins = list(spaeff_sk4[:, 0]) + [90.]
-            effs = list(spaeff_sk4[:, 1])
+        elif sknum in [4, 6]:
+            bins = list(spaeff_ntag[sk_id][:, 0]) + [90.]
+            effs = list(spaeff_ntag[sk_id][:, 1])
         else:
             raise ValueError(f"No search for SK-{sknum} and ntag={ntag}")
         return bins, effs
@@ -1180,6 +1175,13 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         num_rate = likes[:, -2]/(eff * livetimes[sknum - 1]) * 365.25
         return column_stack((likes[:, :-1], num_rate, like_rate(num_rate)))
 
+    # Get the index associated with SK period,
+    # to access the correct efficiencies and parameters.
+    # It is <number of the SK period> - 1,
+    # unless specified as argument, (if a period is skipped).
+    if sk_id is None:
+        sk_id = sknum - 1
+
     if sknum == 2:
         elow = 17.5
     
@@ -1188,14 +1190,15 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
 
     samplow, sampmed, samphigh = load_sample()
     samples_n = None
-    if sknum == 4:
-        samplow_n, sampmed_n, samphigh_n = load_sample(ntag=True) # SK-IV ntag samples
+    if sknum >= 4:
+        # SK-IV and above samples with one tagged neutron
+        samplow_n, sampmed_n, samphigh_n = load_sample(ntag=True) 
         samples_n = [samplow_n, sampmed_n, samphigh_n]
 
     # Get signal and background spectra
     signal = None
     effsignal = 1.0
-    signal, flux_fac, pred_rate, pred_flux = load_signal_pdf(sknum, model,
+    signal, flux_fac, pred_rate, pred_flux = load_signal_pdf(sknum, sk_id, model,
                                             elow, ehigh, elow_1n, ineff_scale)
 
     bgs_sk4 = None
@@ -1498,23 +1501,28 @@ def fullike(model, elow, ehigh, elow_sk2=17.5, sk5=False, sk6=False, skip_sk5=Tr
                     rstep, quiet=quiet, outdir=outdir, systematics=systematics, use_spall=use_spall)
     like_list = [like1, like2, like3, like4]
 
-    # Apply additional fits beyond SK-IV if specified
+    # Apply additional fits beyond SK-IV, if specified.
     # Currently, no SK-V analysis has been carried out.
     # Because of this, it is skipped in this analysis (skip_sk5=True).
-    # If SK-V is skipped, SK-VI will be identified with the number 5
-    # Get the additional period numbers
-    additional_periods = []
+    # If SK-V is skipped, SK-VI is identified with index 4, and not 5
+    additional_periods, additional_ids = [], []
     if skip_sk5:
-        if sk6: additional_periods += [5]
+        if sk6: 
+            additional_periods += [6]
+            additional_ids += [4]
     else:
-        if sk5: additional_periods += [5]
-        if sk6: additional_periods += [6]
+        if sk5:
+            additional_periods += [5]
+            additional_ids += [4]
+        if sk6:
+            additional_periods += [6]
+            additional_ids += [5]
 
-    for period in additional_periods:
+    for period, period_id in additional_periods:
         additional_like = maxlike(period, model,
             elow_sk6, ehigh_sk6, elow_sk6_1n,
             rmin, rmax, rstep, quiet=quiet, outdir=outdir,
-            systematics=systematics, use_spall=use_spall)
+            systematics=systematics, use_spall=use_spall, sk_id=period_id)
         like_list += [additional_like]
 
 
@@ -1611,7 +1619,7 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
         bins = []
         effs = []
         if sknum < 4 or not ntag:
-            spa = spaeff[sknum- 1]
+            spa = spaeff[sknum - 1]
             sol = soleff[sknum - 1]
             spabins = spa[:, 0]
             solbins = sol[:, 0]
@@ -1646,6 +1654,7 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
         print(nnue, nnumu, nnc, nmupi, nspall, rates_relic)
         elow_sk13 = elow
         for sknum in range(1, 5):
+            sk_id = sknum - 1
             if sknum == 4:
                 elow = elow_sk4
                 ehigh = ehigh_sk4
@@ -1674,7 +1683,7 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
                 solbins = array(list(soleff[sknum - 1][:, 0]) + [90.])
                 soleffs = soleff[sknum - 1][:, 1]
                 bgs_sk4 += [spall_sk(solbins, soleffs, effs_3rdred[sknum - 1], sknum, elow, ehigh=ehigh)]
-            signal, flux_fac, pred_rate, pred_flux = load_signal_pdf(sknum, model, elow, ehigh, elow_sk4_1n)
+            signal, flux_fac, pred_rate, pred_flux = load_signal_pdf(sknum, sk_id, model, elow, ehigh, elow_sk4_1n)
             effsignal = signal.overall_efficiency_16_90() # Always use calculated eff.
             nrel = rates_relic[sknum - 1] * effsignal * livetimes[sknum - 1]/365.25
             print(f"sample: {(sampmed < 18).sum()} {elow} {sknum}")

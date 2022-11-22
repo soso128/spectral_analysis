@@ -6,6 +6,8 @@ from scipy.interpolate import interp1d
 ######### SK6 parameters ############
 ##### merge with the rest later #####
 #####################################
+## Change MC files in get_flux_from_mc
+#####################################
 sk6_livetime = 522.2
 sk6_livetime_test = 170 # data subset before full opening of dataset
 aft_eff_sk6 = 0.9
@@ -38,9 +40,9 @@ cuts_roc_sk6, roc_effs_sk6, roc_bg_sk6 = bdt_roc_sk6[:,0], bdt_roc_sk6[:,1], bdt
 ntag_eff_sk6 = interp1d(cuts_roc_sk6, roc_effs_sk6)
 ntag_bg_sk6 = interp1d(cuts_roc_sk6, roc_bg_sk6)
 ntag_effs_sk6 = ntag_eff_sk6(bdt_cuts_sk6)
-ntag_bgs = ntag_bg_sk6(bdt_cuts_sk6)
-ntag_eff_ps = 0.753 # N10 > 5, 1-535 microsecs window
-ntag_bg_ps = 54 # N10 > 5, 1-535 microsecs window
+ntag_bgs_sk6 = ntag_bg_sk6(bdt_cuts_sk6)
+ntag_eff_ps_sk6 = 0.753 # N10 > 5, 1-535 microsecs window
+ntag_bg_ps_sk6 = 54 # N10 > 5, 1-535 microsecs window
 
 #####################################
 #####################################
@@ -75,6 +77,7 @@ modelids = {"lma": 0, "faild": -3, "malaney": -1, "ksw": -2, "woosley": -4}
 
 # Signal Cherenkov angle fractions
 s_ch_frac = [9.433e-04, 9.925e-01, 6.525e-03]
+s_ch_fracs = [s_ch_frac, s_ch_frac, s_ch_frac, s_ch_frac, s_ch_frac_sk6]
 
 # 3rd reduction efficiencies
 effs_sk4 = loadtxt("efficiencies/efficiencies_sk4.txt")
@@ -98,6 +101,7 @@ spaeff_sk3 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
 spaeff_sk4_nontag = array([[12, 0.8], [16, 0.65], [18, 0.63], [20, 0.918], [24, 0.98]])
 spaeff_sk4 = array([[16, 0.826], [18, 0.887], [20, 0.918], [24, 0.98]])
 spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4_nontag, spaeff_sk6_nontag]
+spaeff_ntag = [None, None, None, spaeff_sk4, spaeff_sk6]
 
 soleff_sk1 = array([[16, 0.738], [17, 0.821], [18, 0.878],
                     [19, 0.965], [20, 1]])
@@ -121,6 +125,16 @@ ntag_effs = ntag_eff(bdt_cuts) #[eff(c) for c in bdt_cuts]
 ntag_bgs = ntag_bg(bdt_cuts) # [bg(c) for c in bdt_cuts]
 ntag_eff_ps = 0.447 # N10 > 5, 18-523 microsecs window
 ntag_bg_ps = 7.05 # N10 > 5, 18-523 microsecs window
+
+# ntag efficiencies of all SK periods
+ntag_ebins_sk = [None, None, None, ntag_ebins, ntag_ebins_sk6]
+bdt_cuts_sk = [None, None, None, bdt_cuts, bdt_cuts_sk6]
+emin_sk = [None, None, None, emin, emin_sk6]
+emax_sk = [None, None, None, emax, emax_sk6]
+ntag_effs_sk = [None, None, None, ntag_effs, ntag_effs_sk6]
+ntag_bgs_sk = [None, None, None, ntag_bgs, ntag_bgs_sk6]
+ntag_eff_ps_sk =[None, None, None, ntag_eff_ps, ntag_eff_ps_sk6]
+ntag_bg_ps_sk = [None, None, None, ntag_bg_ps, ntag_bg_ps_sk6]
 
 # Distorsion coefficients for spallation systematics
 spacoeffs_sk = array([[0.0105935649, -0.495682897, 7.93209842, -43.5523139],
