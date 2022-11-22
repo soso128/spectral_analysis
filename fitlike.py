@@ -45,16 +45,13 @@ def pdf(energy, sknum, model, elow, pdfid, region,
     numbkgnospa = 4
     if sknum < 4:
         if pdfid == pdfids['rel']:
-            # try:
-            # return likes.pdf(energy, sknum, modelids[model], elow, 4, region)
-            # except KeyError:  # Models not used by Kirk
             return signal.pdf(energy, region) # Always use our own SRN pdf
         if pdfid in range(numbkgnospa):
             return likes.pdf(energy, sknum, 0, elow, pdfid, region)
-    elif sknum == 4:
+    elif sknum >= 4:
         assert isinstance(ntag, bool)
         if pdfid == pdfids['rel']:
-            return signal.pdf(energy, region, ntag) # to do (for specific srn models)
+            return signal.pdf(energy, region, ntag)
         elif pdfid in range(numbkgnospa):
             return backgrounds[pdfid].pdf(energy, region, ntag)
         elif pdfid != pdfids['spall']: raise ValueError("Invalid pdfid")
@@ -77,7 +74,7 @@ def systematics_escale_res(energies, sknum, model, elow, ehigh, elow_1n=None,
                                   region_id, ntag, backgrounds, signal) * esys(
                                       en, sknum, region_id, pdf_id, esys_scale_dict, esys_res_dict, ntag)
 
-        if sknum == 4:
+        if sknum >= 4:
             if region_id is not None and ntag is not None:
                 if ntag:
                     return quad(pdf_en(region_id, ntag), elow_1n, ehigh)[0]
@@ -168,10 +165,10 @@ def systematics_escale_res(energies, sknum, model, elow, ehigh, elow_1n=None,
     sysmatrix_low[:, pdfids["mupi"], :] = mupifact_low
     sysmatrix_low[:, relic_column, :] = relicfact_low
 
-    if sknum == 4:
+    if sknum >= 4:
         assert energies_n is not None
         assert len(energies) == len(energies_n) == 3
-        energies_low_n, energies_med_n, energies_high_n = energies_n  
+        energies_low_n, energies_med_n, energies_high_n = energies_n
 
         sys_shape_low_1n = (len(energies_low_n), numbkg + 1, len(sigmas))
         sys_shape_high_1n = (len(energies_high_n),) + sys_shape_low[1:]
@@ -227,13 +224,13 @@ def systematics_mupi(energies, sknum, model, elow, ehigh, elow_1n=None,
     '''
     Compute distortion functions due to systematics (for atmospheric spectra)
     Must provide energies=[energies_mid, energies_hi] arrays if sk1/2/3.
-    If sk4, energies=[lo, mid, hi], and energies_n=[lo_n, mid_n, hi_n]
+    For SK4 and above, energies=[lo, mid, hi], and energies_n=[lo_n, mid_n, hi_n]
     for (0 | >1) neutron region and 1 neutron region respectively.
     '''
 
     def pdfnorm(pdf_id, region_id, ntag=None):
         ''' Calculate PDF norm for given region.
-        sk4: if None is given as region, sum over regions
+        SK4 and above: if None is given as region, sum over regions
         '''
         def pdf_en(region_id, ntag=None):
             ''' PDF function depending only on energy '''
@@ -309,25 +306,25 @@ def systematics_mupi(energies, sknum, model, elow, ehigh, elow_1n=None,
 
     return sysmatrix_low,sysmatrix_low_1n
 
-def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
+def systematics_atm(energies, sknum, sk_id, model, elow, ehigh, elow_1n=None,
                     energies_n=None, backgrounds=None, use_spall=False, no_nc=False):
     '''
     Compute distortion functions due to systematics (for atmospheric spectra)
     Must provide energies=[energies_mid, energies_hi] arrays if sk1/2/3.
-    If sk4, energies=[lo, mid, hi], and energies_n=[lo_n, mid_n, hi_n]
+    For SK4 and above, energies=[lo, mid, hi], and energies_n=[lo_n, mid_n, hi_n]
     for (0 | >1) neutron region and 1 neutron region respectively.
     '''
 
     def pdfnorm(pdf_id, region_id, eup=ehigh, ntag=None):
         ''' Calculate PDF norm for given region.
-        sk4: if None is given as region, sum over regions
+        SK4 and above: if None is given as region, sum over regions
         '''
         def pdf_en(region_id, ntag=None):
             ''' PDF function depending only on energy '''
             return lambda en: pdf(en, sknum, model, elow, pdf_id,
                                   region_id, ntag, backgrounds)
 
-        if sknum == 4:
+        if sknum >= 4:
             if region_id is not None and ntag is not None:
                 if ntag:
                     return quad(pdf_en(region_id, ntag), elow_1n, eup)[0]
@@ -354,8 +351,8 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
         else:
             return quad(pdf_en(region_id), elow, eup)[0]
 
-    def pdfmoment(pdf_id, region_id, eup = ehigh, order = 1):
-        ''' First moment of PDF for given Cherenkov region '''
+    def pdfmoment(pdf_id, region_id, eup = ehigh, order=1):
+        ''' Moment of PDF for given Cherenkov region '''
         def integrand(ntag=None):
             return lambda en: en**order * pdf(en, sknum, model, elow, pdf_id,
                                         region_id, ntag, backgrounds)
@@ -371,7 +368,7 @@ def systematics_atm(energies, sknum, model, elow, ehigh, elow_1n=None,
     numbkg = 5 if use_spall else 4
     #spacoeffs = [0.02517, -1.69954 , 43.08233, -485.46063, 2050.978 - 1]
     #spacoeffs = [0.0198, -0.4659 , 2.2375]
-    spacoeffs = spacoeffs_sk[sknum - 1]
+    spacoeffs = spacoeffs_sk[sk_id]
     if sknum < 4:
         assert energies_n is None
         assert len(energies) == 2
@@ -1117,8 +1114,8 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
 
         # Estimate mupi and nc backgrounds using sidebands
         # Fractions are taken from MC
-        mupi = nevlow * mupi_rescale_low[sknum - 1]
-        nc = (nevhigh - mupi_rescale_high[sknum - 1] * mupi) * nc_rescale[sknum - 1]
+        mupi = nevlow * mupi_rescale_low[sk_id]
+        nc = (nevhigh - mupi_rescale_high[sk_id] * mupi) * nc_rescale[sk_id]
         spall = 0
 
         # Maximize likelihoods over backgrounds in signal region
@@ -1135,8 +1132,8 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
 
         # Estimate mupi and nc backgrounds using sidebands
         # Fractions are taken from MC
-        mupi = nevlow * mupi_rescale_low[sknum - 1]
-        nc = (nevhigh - mupi_rescale_high[sknum - 1] * mupi) * nc_rescale[sknum - 1]
+        mupi = nevlow * mupi_rescale_low[sk_id]
+        nc = (nevhigh - mupi_rescale_high[sk_id] * mupi) * nc_rescale[sk_id]
         if no_nc: nc = 0
         spall = 8 if use_spall else 0
 
@@ -1259,8 +1256,8 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         if systematics:
             sysmatrices = None
             if systematics == 1:
-                sysmatrices = systematics_atm([sampmed, samphigh], sknum, model,
-                                           elow, ehigh, backgrounds=bgs_sk4, use_spall = use_spall)
+                sysmatrices = systematics_atm([sampmed, samphigh], sknum, sk_id, model,
+                                           elow, ehigh, backgrounds=bgs_sk4, use_spall=use_spall)
                 # Distort pdfs: (Nen x Npdfs x Nsigma x Nsigma2 x Nsigma3)
                 sysmatrix_med, sysmatrix_high = sysmatrices[:3]
                 if use_spall:
@@ -1314,7 +1311,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         if systematics:
             sysmatrices = None
             if systematics == 1:
-                sysmatrices = systematics_atm([samplow, sampmed, samphigh], sknum,
+                sysmatrices = systematics_atm([samplow, sampmed, samphigh], sknum, sk_id,
                                         model, elow, ehigh, elow_1n=elow_1n,
                                         backgrounds=bgs_sk4,
                                         energies_n=[samplow_n, sampmed_n, samphigh_n],

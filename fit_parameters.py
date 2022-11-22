@@ -7,8 +7,8 @@ from scipy.interpolate import interp1d
 ##### merge with the rest later #####
 #####################################
 ## Change MC files in get_flux_from_mc
-#####################################
 ## Update spall PDF parameters
+## Update energy resolution function (esys_pdf_distorsions.py)
 #####################################
 
 sk6_livetime = 522.2
