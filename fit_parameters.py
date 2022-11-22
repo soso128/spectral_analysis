@@ -1,10 +1,55 @@
 from numpy import *
 from scipy.interpolate import interp1d
 
+
+
+######### SK6 parameters ############
+##### merge with the rest later #####
+#####################################
+sk6_livetime = 522.2
+sk6_livetime_test = 170 # data subset before full opening of dataset
+aft_eff_sk6 = 0.9
+sys_fv_sk6 = 0.015
+sys_eff_sk6 = 0.025
+sys_eff_sk6_ntag = 0.05
+
+# Fractions of signal in Cherenkov angle regions
+s_ch_frac_sk6 = [9.433e-04, 9.925e-01, 6.525e-03]
+
+# Third reduction efficiencies
+effs_sk6 = loadtxt("efficiencies/efficiencies_sk4.txt")
+effsk6 = interp1d(effs_sk6[:,0], effs_sk6[:,1], bounds_error=False,
+                  fill_value = (effs_sk6[0,1], effs_sk6[-1,1]))
+
+# Signal efficiencies of spallation cut
+spaeff_sk6_nontag = array([[12, 0.8], [16, 0.65], [18, 0.63], [20, 0.918], [24, 0.98]])
+spaeff_sk6 = array([[16, 0.826], [18, 0.887], [20, 0.918], [24, 0.98]])
+
+# Solar cut efficiencies
+soleff_sk6 = array([[16, 0.731], [17, 0.822], [18, 0.883],
+                    [19, 0.966], [20, 1]])
+
+# Ntag efficiencies
+ntag_ebins_sk6 = [12, 14, 16, 18, 20, 22, 24, 26, 28, 100]
+bdt_cuts_sk6 = [0.997, 0.997, 0.749, 0.749, 0.712, 0.712, 0.781, 0.855, 0.937]
+emin_sk6, emax_sk6 = ntag_ebins_sk6[0], ntag_ebins_sk6[-1]
+bdt_roc_sk6 = genfromtxt('/disk02/usr6/giampaol/ntag-mva/models/bdt22_skg4_0.013_10M/roc_test.roc')
+cuts_roc_sk6, roc_effs_sk6, roc_bg_sk6 = bdt_roc_sk6[:,0], bdt_roc_sk6[:,1], bdt_roc_sk6[:,2]
+ntag_eff_sk6 = interp1d(cuts_roc_sk6, roc_effs_sk6)
+ntag_bg_sk6 = interp1d(cuts_roc_sk6, roc_bg_sk6)
+ntag_effs_sk6 = ntag_eff_sk6(bdt_cuts_sk6)
+ntag_bgs = ntag_bg_sk6(bdt_cuts_sk6)
+ntag_eff_ps = 0.753 # N10 > 5, 1-535 microsecs window
+ntag_bg_ps = 54 # N10 > 5, 1-535 microsecs window
+
+#####################################
+#####################################
+
 # livetimes
-livetimes = array([1497.44, 793.71, 562.04, 2970.1])
+livetimes = array([1497.44, 793.71, 562.04, 2970.1, sk6_livetime_test])
 aft_eff = 0.94
 livetimes[3] *= aft_eff
+livetimes[4] *= aft_eff_sk6
 
 # energy-independent efficiency sys
 efftot = {"lma": [0.7975,0.56703,0.77969],
@@ -15,10 +60,10 @@ efftot = {"lma": [0.7975,0.56703,0.77969],
 fluxfac = {"lma": 0.535115, "malaney": 0.5845, "ksw": 0.488413,
            "faild": 0.431, "woosley": 0.47447}
 # Systematics for signal: reduction efficiency, livetime, Strumia-Vissani cross-section, FV
-sys_eff = array([0.0254, 0.0404, 0.0253, 0.0220])
+sys_eff = array([0.0254, 0.0404, 0.0253, 0.0220, sys_eff_sk6])
 sys_livetime = 0.001
 sys_xsec = 0.01
-sys_fv = array([0.013, 0.011, 0.010, 0.015])
+sys_fv = array([0.013, 0.011, 0.010, 0.015, sys_fv_sk6])
 sys_eff = sqrt(sys_eff**2 + sys_livetime**2 + sys_xsec**2 + sys_fv**2)
 # Ntag cut systematics from AmBe study for SK-IV
 sys_eff_sk4_ntag = 0.125
@@ -44,7 +89,7 @@ effsk2 = interp1d(effs_sk2[:,0], effs_sk2[:,1], bounds_error=False,
 effs_sk1 = loadtxt("efficiencies/efficiencies_sk1.txt")
 effsk1 = interp1d(effs_sk1[:,0], effs_sk1[:,1], bounds_error=False,
                   fill_value = (effs_sk1[0,1], effs_sk1[-1,1]))
-effs_3rdred = [effsk1, effsk2, effsk3, effsk4]
+effs_3rdred = [effsk1, effsk2, effsk3, effsk4, effsk6]
 
 # Spallation cut efficiencies
 spaeff_sk1 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
@@ -52,7 +97,7 @@ spaeff_sk2 = array([[17.5, 0.762], [20, 0.882], [26, 1.0]])
 spaeff_sk3 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
 spaeff_sk4_nontag = array([[12, 0.8], [16, 0.65], [18, 0.63], [20, 0.918], [24, 0.98]])
 spaeff_sk4 = array([[16, 0.826], [18, 0.887], [20, 0.918], [24, 0.98]])
-spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4_nontag]
+spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4_nontag, spaeff_sk6_nontag]
 
 soleff_sk1 = array([[16, 0.738], [17, 0.821], [18, 0.878],
                     [19, 0.965], [20, 1]])
@@ -62,7 +107,7 @@ soleff_sk3 = array([[16, 0.738], [17, 0.821], [18, 0.878],
                     [19, 0.965], [20, 1]])
 soleff_sk4 = array([[16, 0.731], [17, 0.822], [18, 0.883],
                     [19, 0.966], [20, 1]])
-soleff = [soleff_sk1, soleff_sk2, soleff_sk3, soleff_sk4]
+soleff = [soleff_sk1, soleff_sk2, soleff_sk3, soleff_sk4, soleff_sk6]
 
 # SK4 ntag efficiencies
 ntag_ebins = [12,14,16,18,20,22,24,26,28,90]
