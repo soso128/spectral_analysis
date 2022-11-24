@@ -902,6 +902,7 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, sk_id, elow, ehigh, elow_1n,
     def plotregion(region, data, ax, elow=elow, ntag=None):
         #plt.figure()
         step = 2
+        if sknum == 6: step = 4
         en = arange(elow, ehigh, 0.1)
         nuecc = nnue * array([pdf(ee, sknum, model, elow, pdfids["nue"], region,
                                 ntag=ntag, backgrounds=background) for ee in en])
@@ -946,7 +947,7 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, sk_id, elow, ehigh, elow_1n,
         all_bg_plot, = ax.plot(en, step*(bg_total), label="All backgrounds",
                                linewidth=3, color="tab:blue")
 
-        xlims = (16, 80)
+        xlims = (min(elow, elow_1n), 80)
         ylims = (-2, 22)
         xticks = append(arange(20, 80, 10), 16)
         yticks = arange(0, 22, 2)
@@ -981,7 +982,7 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, sk_id, elow, ehigh, elow_1n,
                         "SK-II\n794 days",
                         "SK-III\n562 days",
                         "SK-IV\n2970 days",
-                        "SK-VI\n522 days"]
+                        "SK-VI\npreliminary\n522 days"]
             yshift = 0.76 if ntag is not None else 0.8
             ax.text(0.88,yshift, sklabels[sk_id], size=30,
                         transform=ax.transAxes, weight="bold",
@@ -991,6 +992,11 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, sk_id, elow, ehigh, elow_1n,
         if ax.is_first_row():
             alabels = ["$20\degree<\\theta_C<38\degree$",
                "$38\degree<\\theta_C<50\degree$",
+               "$70\degree<\\theta_C<90\degree$"]
+            
+            if sknum == 6:
+                alabels = ["$20\degree<\\theta_C<38\degree$",
+               "$38\degree<\\theta_C<53\degree$",
                "$70\degree<\\theta_C<90\degree$"]
 
             ax.text(0.5,1.03, alabels[region], size=30,
@@ -1172,6 +1178,10 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         num_rate = likes[:, -2]/(eff * livetimes[sk_id]) * 365.25
         # print(rates, num_rate)
         return column_stack((likes[:, :-1], num_rate, like_rate(num_rate)))
+
+    print("-----------------------------------------")
+    print(f"------------ SK-{sknum} spectral fit ----------")
+    print("-----------------------------------------")
 
     # Get the index associated with SK period,
     # to access the correct efficiencies and parameters.
@@ -1433,6 +1443,10 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
                nrelic = nrelic, nspall = nspall)
         plt.savefig(f"{outdir}/fit_sk{sknum}.pdf")
         plt.clf()
+    print("-----------------------------------------")
+    print("")
+    print("")
+    
     return limit * flux_fac, flux_fac, results_sys, pred_rate, pred_flux
 
 
@@ -1539,6 +1553,7 @@ def fullike(model, elow, ehigh, elow_sk2=17.5, sk5=False, sk6=False, skip_sk5=Tr
     _, fluxbest_comb, fluxpl_comb, fluxmin_comb, fluxlim_comb = res_fluxes
     print("Results: ", results[-1][results[-1][:, -1].argmax(), -2])
 
+
     if not quiet:
         plt.figure(figsize=(12.0, 8.0))
         plt.xlabel("DSNB events/year")
@@ -1565,6 +1580,10 @@ def fullike(model, elow, ehigh, elow_sk2=17.5, sk5=False, sk6=False, skip_sk5=Tr
         plt.legend()
         plt.savefig(outdir + "/full_like.pdf")
         plt.clf()
+
+    print("-----------------------------------------")
+    print("------------ Combined results -----------")
+    print("-----------------------------------------")
 
     print("")
     print(f"Best fit rate: {ratebest_comb} + {ratepl_comb} - {ratemin_comb}")
