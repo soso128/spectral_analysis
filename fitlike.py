@@ -982,8 +982,11 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, sk_id, elow, ehigh, elow_1n,
                         "SK-II\n794 days",
                         "SK-III\n562 days",
                         "SK-IV\n2970 days",
-                        "SK-VI\npreliminary\n522 days"]
-            yshift = 0.76 if ntag is not None else 0.8
+                        "SK-VI\n522 days\npreliminary"]
+            if ntag is None: yshift = 0.8
+            elif sknum == 4: yshift = 0.76
+            else: yshift = 0.7
+            # yshift = 0.76 if ntag is not None else 0.8
             ax.text(0.88,yshift, sklabels[sk_id], size=30,
                         transform=ax.transAxes, weight="bold",
                         horizontalalignment='right')
@@ -1174,7 +1177,7 @@ def maxlike(sknum, model, elow, ehigh=90, elow_1n=16, rmin=-5, rmax=100,
         ltot = (lconv * (pgaus * epsrange * simpsoncoeff)).sum(axis=1)
         # print("negativity of ltot", any(ltot<=0))
         likenew = log(ltot) + lmax
-        like_rate = interp1d(rates, likenew, fill_value=1e-10, bounds_error=False)
+        like_rate = interp1d(rates, likenew, fill_value=-1e5, bounds_error=False)
         num_rate = likes[:, -2]/(eff * livetimes[sk_id]) * 365.25
         # print(rates, num_rate)
         return column_stack((likes[:, :-1], num_rate, like_rate(num_rate)))
@@ -1463,13 +1466,13 @@ def combine_fluxes(results, fluxfacts):
     flux_sampling = arange(0, 50.1, 0.1)
     rels, likes = results[0][:, 0], results[0][:, -1]
     fluxes = rels * fluxfacts[0]
-    flike = interp1d(fluxes, likes, bounds_error=False, fill_value=1e-10)
+    flike = interp1d(fluxes, likes, bounds_error=False, fill_value=-1e5)
     newlikes = flike(flux_sampling)
     liketot = newlikes - newlikes.max()
     for i, r in enumerate(results[1:]):
         rels, likes = r[:, -2], r[:, -1]
         fluxes = rels * fluxfacts[i + 1]
-        flike = interp1d(fluxes, likes, bounds_error=False, fill_value=1e-10)
+        flike = interp1d(fluxes, likes, bounds_error=False, fill_value=-1e5)
         newlikes = flike(flux_sampling)
         liketot += newlikes - newlikes.max()
     return analyse(column_stack((flux_sampling, liketot)))
@@ -1597,8 +1600,10 @@ def fullike(model, elow, ehigh, elow_sk2=17.5, sk5=False, sk6=False, skip_sk5=Tr
     print(f"90%% c.l. combined flux limit: {fluxlim_comb} /cm^2/s > 17.3 MeV")
     print(f"Predicted flux: {pred_flux}")
 
-def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
-            outdir='.', use_spall = False):
+def plot_results(model, elow, ehigh, elow_sk2 = 17.5, 
+                elow_sk4=None, ehigh_sk4=None, elow_sk4_1n=None,
+                elow_sk6=None, ehigh_sk6=None, elow_sk6_1n=None,
+                outdir='.', use_spall=False, sk6=False):
     '''
     Plot results without fitting for all SK phases
     model = SRN model
@@ -1607,7 +1612,7 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
     os.makedirs(f"{outdir}/replot", exist_ok=True)
 
     def load_sample(sknum, ntag=False):
-        ''' Data samples for SK I-IV '''
+        ''' Data samples for SK I-VI '''
         if ntag:
             low = loadtxt("sk{}/ntag/samplelow.txt".format(int(sknum)))[:, 1]
             med = loadtxt("sk{}/ntag/samplemed.txt".format(int(sknum)))[:, 1]
@@ -1616,27 +1621,22 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
             med = med[(med > elow_sk4_1n) & (med < ehigh_sk4)]
             high = high[(high > elow_sk4_1n) & (high < ehigh_sk4)]
         else:
-            #if sknum < 4:
             low = loadtxt("sk{}/samplelow.txt".format(int(sknum)))[:, 1]
             med = loadtxt("sk{}/samplemed.txt".format(int(sknum)))[:, 1]
             high = loadtxt("sk{}/samplehigh.txt".format(int(sknum)))[:, 1]
             print(f"sample: {(med < 18).sum()} {elow} {sknum}")
-            #if sknum == 4:
-                #low = loadtxt("sk{}/tight/samplelow.txt".format(int(sknum)))[:, 1]
-                #med = loadtxt("sk{}/tight/samplemed.txt".format(int(sknum)))[:, 1]
-                #high = loadtxt("sk{}/tight/samplehigh.txt".format(int(sknum)))[:, 1]
             low = low[(low > elow) & (low < ehigh)]
             med = med[(med > elow) & (med < ehigh)]
             high = high[(high > elow) & (high < ehigh)]
         return low,med,high
 
-    def get_spasolbins(sknum, ntag=False):
+    def get_spasolbins(sknum, sk_id, ntag=False):
         ''' Get efficiency steps for background pdfs '''
         bins = []
         effs = []
         if sknum < 4 or not ntag:
-            spa = spaeff[sknum - 1]
-            sol = soleff[sknum - 1]
+            spa = spaeff[sk_id]
+            sol = soleff[sk_id]
             spabins = spa[:, 0]
             solbins = sol[:, 0]
             effspa = lambda x: 1.0 if x < spa[0,0] else spa[(spa[:, 0] <= x), -1][-1]
@@ -1644,7 +1644,7 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
             bins = array(list(set(sorted(append(spabins, solbins)))))
             effs = vectorize(effspa)(bins) * vectorize(effsol)(bins)
             bins = list(bins) + [90.]
-        elif sknum == 4 and ntag:
+        elif sknum >= 4 and ntag:
             bins = list(spaeff_sk4[:, 0]) + [90.]
             effs = list(spaeff_sk4[:, 1])
         else:
@@ -1652,13 +1652,13 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
         return bins, effs
 
     # Plot spectra for all phases of SK
-    """ Fit SK I-IV data """
-    if elow_sk4 is None:
-        elow_sk4 = elow
-    if elow_sk4_1n is None:
-        elow_sk4_1n = elow
-    if ehigh_sk4 is None:
-        ehigh_sk4 = ehigh
+    """ Fit SK I-VI data """
+    if elow_sk4 is None: elow_sk4 = elow
+    if elow_sk4_1n is None: elow_sk4_1n = elow
+    if ehigh_sk4 is None: ehigh_sk4 = ehigh
+    if elow_sk6 is None: elow_sk6 = elow
+    if elow_sk6_1n is None: elow_sk6_1n = elow
+    if ehigh_sk6 is None: ehigh_sk6 = ehigh
     with open(f"{outdir}/fit.log") as fitfile:
         lines = fitfile.readlines()
         nnue = array([float(line.split()[-1]) for line in lines if line.startswith("nu-e")])
@@ -1669,14 +1669,23 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
         rates_relic = array([float(line.split()[0]) for line in lines if (line.strip()).endswith("relic evts/yr")])
         print(nnue, nnumu, nnc, nmupi, nspall, rates_relic)
         elow_sk13 = elow
-        for sknum in range(1, 5):
-            sk_id = sknum - 1
+        sknums = list(range(1, 5))
+        if sk6: sknums += [6]
+        for sknum in sknums:
+            sk_id = 4 if sknum == 6 else sknum - 1
             if sknum == 4:
                 elow = elow_sk4
                 ehigh = ehigh_sk4
                 samplow, sampmed, samphigh = load_sample(sknum)
                 samples_n = None
                 samplow_n, sampmed_n, samphigh_n = load_sample(sknum, ntag=True) # SK-IV ntag samples
+                samples_n = [samplow_n, sampmed_n, samphigh_n]
+            elif sknum == 6:
+                elow = elow_sk6
+                ehigh = ehigh_sk6
+                samplow, sampmed, samphigh = load_sample(sknum)
+                samples_n = None
+                samplow_n, sampmed_n, samphigh_n = load_sample(sknum, ntag=True) # SK-VI ntag samples
                 samples_n = [samplow_n, sampmed_n, samphigh_n]
             elif sknum == 2:
                 elow = elow_sk2
@@ -1686,35 +1695,37 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
                 elow = elow_sk13
                 samplow, sampmed, samphigh = load_sample(sknum)
                 samples_n = None
-            bg_sk4_dir = "./pdf_bg_sk4"
-            cut_bins_ntag, cut_effs_ntag = get_spasolbins(sknum, ntag=True)
-            cut_bins, cut_effs = get_spasolbins(sknum, ntag=False)
+            # bg_sk4_dir = "./pdf_bg_sk4"
+            cut_bins_ntag, cut_effs_ntag = get_spasolbins(sknum, sk_id, ntag=True)
+            cut_bins, cut_effs = get_spasolbins(sknum, sk_id, ntag=False)
             cut_effs = tile(cut_effs, (4, 1))
             cut_effs_ntag = tile(cut_effs_ntag, (4, 1))
 
+            elow_1n = elow_sk6_1n if sknum == 6 else elow_sk4_1n
             bgs_sk4 = [bg_sk4(i, cut_bins, cut_effs[i],
-                        cut_bins_ntag, cut_effs_ntag[i], bg_sk4_dir, elow,
-                        ehigh=ehigh, elow_n=elow_sk4_1n ) for i in range(4)]
+                        cut_bins_ntag, cut_effs_ntag[i], bg_sk_dir[sk_id], elow,
+                        ehigh=ehigh, elow_n=elow_1n ) for i in range(4)]
             if use_spall:
-                solbins = array(list(soleff[sknum - 1][:, 0]) + [90.])
-                soleffs = soleff[sknum - 1][:, 1]
-                bgs_sk4 += [spall_sk(solbins, soleffs, effs_3rdred[sknum - 1], sknum, elow, ehigh=ehigh)]
+                solbins = array(list(soleff[sk_id][:, 0]) + [90.])
+                soleffs = soleff[sk_id][:, 1]
+                bgs_sk4 += [spall_sk(solbins, soleffs, effs_3rdred[sk_id], sk_id, elow, ehigh=ehigh)]
             signal, flux_fac, pred_rate, pred_flux = load_signal_pdf(sknum, sk_id, model, elow, ehigh, elow_sk4_1n)
             effsignal = signal.overall_efficiency_16_90() # Always use calculated eff.
-            nrel = rates_relic[sknum - 1] * effsignal * livetimes[sknum - 1]/365.25
+            nrel = rates_relic[sk_id] * effsignal * livetimes[sk_id]/365.25
             print(f"sample: {(sampmed < 18).sum()} {elow} {sknum}")
-            plotfit(nnue[sknum - 1], nnumu[sknum - 1], nnc[sknum - 1], 
-                    nmupi[sknum - 1], model[sknum - 1], sknum, sk_id,
-                    elow, ehigh, elow_sk4_1n, samples=[samplow, sampmed, samphigh],
-                    samples_n=samples_n, signal=signal, background=bgs_sk4, use_spall = use_spall,
-                   nrelic = nrel, nspall = nspall[sknum - 1])
+            plotfit(nnue[sk_id], nnumu[sk_id], nnc[sk_id], 
+                    nmupi[sk_id], model[sk_id], sknum, sk_id,
+                    elow, ehigh, elow_1n, samples=[samplow, sampmed, samphigh],
+                    samples_n=samples_n, signal=signal,
+                    background=bgs_sk4, use_spall=use_spall,
+                    nrelic=nrel, nspall=nspall[sk_id])
             plt.savefig(f"{outdir}/replot/fit_sk{sknum}.pdf")
             plt.clf()
     # Plot likelihoods
-    results = [loadtxt(f"{outdir}/fit_sk{sknum}.txt") for sknum in range(1,5)]
+    results = [loadtxt(f"{outdir}/fit_sk{sknum}.txt") for sknum in sknums]
     rate = results[0][:, 0]
     for i,r in enumerate(results):
-        flike = interp1d(r[:, -2], r[:, -1], bounds_error = False, fill_value = r[:, -1].min())
+        flike = interp1d(r[:, -2], r[:, -1], bounds_error=False, fill_value=r[:, -1].min())
         results[i] = column_stack((rate, flike(rate)))
     plt.figure(figsize=(12.0, 8.0))
     plt.xlabel("DSNB rate [events/year]")
@@ -1729,6 +1740,10 @@ def plot_results(model, elow, ehigh, elow_sk2 = 17.5, elow_sk4=None, ehigh_sk4=N
     plt.plot(x, results[3][:, -1] - results[3][:,-1].max(),
              '--', label="SK-IV",linewidth=2)
     likesum = results[0][:, -1] + results[1][:, -1] + results[2][:, -1] + results[3][:, -1]
+    if sk6:
+        plt.plot(x, results[4][:, -1] - results[4][:,-1].max(),
+                 '--', label=f"SK-{roman_num(6)}",linewidth=2)
+        likesum += results[4][:, -1]
     likesum -= likesum.max()
     plt.plot(x, likesum, label = "Combined", color = 'black')
     plt.plot([0,20], -0.5 * ones(2), 'r')
@@ -1743,7 +1758,7 @@ def sk4like(model, elow_sk4, ehigh_sk4, elow_sk4_1n=None, toydir=None,
             rmin=-5, rmax=100, rstep=0.1, quiet=False, outdir='.',
             systematics=1, gd_frac=None, use_spall=False, no_nc=False,
             trig_lo=1., trig_hi=535., ineff_scale=1.0, ncsys_scale=1.0):
-    """ Fit SK I-IV data """
+    """ SK IV Fit """
     if elow_sk4_1n is None:
         elow_sk4_1n = elow_sk4
 
@@ -1756,6 +1771,31 @@ def sk4like(model, elow_sk4, ehigh_sk4, elow_sk4_1n=None, toydir=None,
                     no_nc=no_nc, trig_lo=trig_lo, trig_hi=trig_hi, ineff_scale=ineff_scale)
     fluxlim, fluxfac, result, = like4[0], like4[1], like4[2]
     pred_rate, pred_flux = like4[3], like4[4]
+    ratelim = fluxlim / fluxfac
+
+    print("")
+    print("90%% c.l. rate limit is: %f > 16 MeV" % ratelim)
+    print(f"Predicted rate: {pred_rate}")
+
+    print("")
+    print("90%% c.l. flux limits are: %f /cm^2/s > 17.3 MeV" % fluxlim)
+    print(f"Predicted flux: {pred_flux}")
+
+def sk6like(model, elow_sk6, ehigh_sk6, elow_sk6_1n=None, 
+            rmin=-5, rmax=100, rstep=0.1, quiet=False, outdir='.',
+            systematics=1, use_spall=False):
+    """ SK VI Fit """
+    if elow_sk6_1n is None:
+        elow_sk6_1n = elow_sk6
+
+
+    like6 = maxlike(6, model, elow_sk6, ehigh_sk6, elow_sk6_1n,
+                    rmin, rmax, rstep, quiet=quiet, outdir=outdir,
+                    systematics=systematics, use_spall=use_spall, sk_id=4)
+
+
+    fluxlim, fluxfac, result, = like6[0], like6[1], like6[2]
+    pred_rate, pred_flux = like6[3], like6[4]
     ratelim = fluxlim / fluxfac
 
     print("")
@@ -1844,6 +1884,9 @@ if __name__ == "__main__":
     # Plot fit results on already-completed fit
     elif args.drawonly:
         plot_results(args.modelname, outdir=args.directory,
+
+            # SK periods
+            sk6=args.sk6,
         
             # Energy range of plot
             elow=16, ehigh=90, elow_sk2=16,
