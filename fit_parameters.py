@@ -12,8 +12,9 @@ from scipy.interpolate import interp1d
 #####################################
 
 sk6_livetime = 522.2
-sk6_livetime_test = 170 # SK-VI data subset before full opening of dataset
-aft_eff_sk6 = 0.9
+# sk6_livetime_test = 170 # SK-VI data subset before full opening of dataset
+# sk6_livetime_test = 3000 # SK-VI data subset before full opening of dataset
+aft_eff_sk6 = 1.0
 sys_fv_sk6 = 0.015
 sys_eff_sk6 = 0.025
 sys_eff_sk6_ntag = 0.05
@@ -30,12 +31,14 @@ effsk6 = interp1d(effs_sk6[:,0], effs_sk6[:,1], bounds_error=False,
                   fill_value = (effs_sk6[0,1], effs_sk6[-1,1]))
 
 # Signal efficiencies of spallation cut
-spaeff_sk6_nontag = array([[12, 0.8], [16, 0.65], [18, 0.63], [20, 0.918], [24, 0.98]])
-spaeff_sk6 = array([[16, 0.826], [18, 0.887], [20, 0.918], [24, 0.98]])
+# spaeff_sk6 = array([[16, 0.826], [18, 0.887], [20, 0.918], [24, 0.98]])
+# spaeff_sk6_nontag = array([[12, 0.8], [16, 0.65], [18, 0.63], [20, 0.918], [24, 0.98]])
+spaeff_sk6 = array([[16, 0.73*0.679], [18, 0.78*0.634], [20, 0.86*0.9], [24, 0.98*0.9]])
+spaeff_sk6_nontag = spaeff_sk6
 
 # Solar cut efficiencies
-soleff_sk6 = array([[16, 0.731], [17, 0.822], [18, 0.883],
-                    [19, 0.966], [20, 1]])
+soleff_sk6 = array([[16, 0.732], [17, 0.822], [18, 0.882],
+                    [19, 0.965], [20, 1]])
 
 # Ntag efficiencies
 ntag_ebins_sk6 = [12, 14, 16, 18, 20, 22, 24, 26, 28, 100]
@@ -54,7 +57,7 @@ ntag_bg_ps_sk6 = 54 # N10 > 5, 1-535 microsecs window
 #####################################
 
 # livetimes
-livetimes = array([1497.44, 793.71, 562.04, 2970.1, sk6_livetime_test])
+livetimes = array([1497.44, 793.71, 562.04, 2970.1, sk6_livetime])
 aft_eff = 0.94
 livetimes[3] *= aft_eff
 livetimes[4] *= aft_eff_sk6
@@ -166,7 +169,8 @@ spacoeffs_sk = array([[0.0105935649, -0.495682897, 7.93209842, -43.5523139],
 esys_scale_dict = {}
 esys_res_dict = {}
 
-# Scalings between Cherenkov angle regions (from MC)
+# Scalings between Cherenkov angle regions.
+# Only used for the first guess during initialization 
 mupi_rescale_low = [1.367, 1.75, 1.34, 1.34, 1.34] # mupi from low to medium
 mupi_rescale_high = [0.12777, 0.1, 0.13, 0.13, 0.13] # mupi from low to high
 nc_rescale = [1.16313, 1.42, 1.14, 1.14, 1.14] # NC from high to medium
