@@ -982,7 +982,7 @@ def plotfit(nnue, nnumu, nnc, nmupi, model, sknum, sk_id, elow, ehigh, elow_1n,
                         "SK-II\n794 days",
                         "SK-III\n562 days",
                         "SK-IV\n2970 days",
-                        "SK-VI\n522 days\npreliminary"]
+                        "SK-VI\n552 days\npreliminary"]
             if ntag is None: yshift = 0.8
             elif sknum == 4: yshift = 0.76
             else: yshift = 0.7
@@ -1559,7 +1559,7 @@ def fullike(model, elow, ehigh, elow_sk2=17.5, sk5=False, sk6=False, skip_sk5=Tr
 
     if not quiet:
         plt.figure(figsize=(12.0, 8.0))
-        plt.xlabel("DSNB events/year")
+        plt.xlabel("DSNB rate [events/year]")
         plt.ylabel("Likelihood")
         x = results[0][:, -2]
         plt.plot(x, results[0][:, -1] - results[0][:,-1].max(),

@@ -1,66 +1,19 @@
+# Parameters used in the spectral fits.
+# Parameters are given in lists to reflect different SK periods.
+# Note: at this moment, the SK5 peroid was not considered.
+# Therefore, parameter list are in the form:
+# parameter = [par_SK1, par_SK2, par_SK3, par_SK4, par_SK6]
 from numpy import *
 from scipy.interpolate import interp1d
 
 
-
-######### SK6 parameters ############
-##### merge with the rest later #####
-#####################################
-## Change MC files in get_flux_from_mc
-## Update spall PDF parameters and coeffs
-## Update energy resolution function (esys_pdf_distorsions.py)
-#####################################
-
-sk6_livetime = 522.2
-# sk6_livetime_test = 170 # SK-VI data subset before full opening of dataset
-# sk6_livetime_test = 3000 # SK-VI data subset before full opening of dataset
-aft_eff_sk6 = 1.0
-sys_fv_sk6 = 0.015
-sys_eff_sk6 = 0.025
-sys_eff_sk6_ntag = 0.05
-
-# Directory with atmopsheric background PDF parametrizations
-bg_sk6_dir = "./pdf_bg_sk6"
-
-# Fractions of signal in Cherenkov angle regions
-s_ch_frac_sk6 = [9.433e-04, 9.925e-01, 6.525e-03]
-
-# Third reduction efficiencies
-effs_sk6 = loadtxt("efficiencies/efficiencies_sk4.txt")
-effsk6 = interp1d(effs_sk6[:,0], effs_sk6[:,1], bounds_error=False,
-                  fill_value = (effs_sk6[0,1], effs_sk6[-1,1]))
-
-# Signal efficiencies of spallation cut
-# spaeff_sk6 = array([[16, 0.826], [18, 0.887], [20, 0.918], [24, 0.98]])
-# spaeff_sk6_nontag = array([[12, 0.8], [16, 0.65], [18, 0.63], [20, 0.918], [24, 0.98]])
-spaeff_sk6 = array([[16, 0.73*0.679], [18, 0.78*0.634], [20, 0.86*0.9], [24, 0.98*0.9]])
-spaeff_sk6_nontag = spaeff_sk6
-
-# Solar cut efficiencies
-soleff_sk6 = array([[16, 0.732], [17, 0.822], [18, 0.882],
-                    [19, 0.965], [20, 1]])
-
-# Ntag efficiencies
-ntag_ebins_sk6 = [12, 14, 16, 18, 20, 22, 24, 26, 28, 100]
-bdt_cuts_sk6 = [0.997, 0.997, 0.749, 0.749, 0.712, 0.712, 0.781, 0.855, 0.937]
-emin_sk6, emax_sk6 = ntag_ebins_sk6[0], ntag_ebins_sk6[-1]
-bdt_roc_sk6 = genfromtxt('/disk02/usr6/giampaol/ntag-mva/models/bdt22_skg4_0.013_10M/roc_test.roc')
-cuts_roc_sk6, roc_effs_sk6, roc_bg_sk6 = bdt_roc_sk6[:,0], bdt_roc_sk6[:,1], bdt_roc_sk6[:,2]
-ntag_eff_sk6 = interp1d(cuts_roc_sk6, roc_effs_sk6)
-ntag_bg_sk6 = interp1d(cuts_roc_sk6, roc_bg_sk6)
-ntag_effs_sk6 = ntag_eff_sk6(bdt_cuts_sk6)
-ntag_bgs_sk6 = ntag_bg_sk6(bdt_cuts_sk6)
-ntag_eff_ps_sk6 = 0.753 # N10 > 5, 1-535 microsecs window
-ntag_bg_ps_sk6 = 54 # N10 > 5, 1-535 microsecs window
-
-#####################################
-#####################################
+# AFT trigger efficiencies
+aft_eff = 0.94 # SK4 AFT trigger eff
+aft_eff_sk6 = array([[16, 0.679], [18, 0.634], [20, 0.9], [24, 0.9]]) #SK6 (energy-dependent)
 
 # livetimes
-livetimes = array([1497.44, 793.71, 562.04, 2970.1, sk6_livetime])
-aft_eff = 0.94
+livetimes = array([1497.44, 793.71, 562.04, 2970.1, 552.2])
 livetimes[3] *= aft_eff
-livetimes[4] *= aft_eff_sk6
 
 # energy-independent efficiency sys
 efftot = {"lma": [0.7975,0.56703,0.77969],
@@ -71,13 +24,14 @@ efftot = {"lma": [0.7975,0.56703,0.77969],
 fluxfac = {"lma": 0.535115, "malaney": 0.5845, "ksw": 0.488413,
            "faild": 0.431, "woosley": 0.47447}
 # Systematics for signal: reduction efficiency, livetime, Strumia-Vissani cross-section, FV
-sys_eff = array([0.0254, 0.0404, 0.0253, 0.0220, sys_eff_sk6])
+sys_eff = array([0.0254, 0.0404, 0.0253, 0.0220, 0.025])
 sys_livetime = 0.001
 sys_xsec = 0.01
-sys_fv = array([0.013, 0.011, 0.010, 0.015, sys_fv_sk6])
+sys_fv = array([0.013, 0.011, 0.010, 0.015, 0.015])
 sys_eff = sqrt(sys_eff**2 + sys_livetime**2 + sys_xsec**2 + sys_fv**2)
-# Ntag cut systematics from AmBe study for SK-IV
+# Ntag cut systematics from AmBe study for SK-IV and SK-VI
 sys_eff_sk4_ntag = 0.125
+sys_eff_sk6_ntag = 0.05
 
 # Definitions
 regionids = {"low": 0, "medium": 1, "high": 2}
@@ -85,14 +39,20 @@ pdfids = {"nue": 0, "numu": 1, "nc": 2, "mupi": 3, "spall": 4, "rel": 5}
 modelids = {"lma": 0, "faild": -3, "malaney": -1, "ksw": -2, "woosley": -4}
 
 # Directory with atmospheric background PDF parametrizations
+# Only used for SK>=4
 bg_sk4_dir = "./pdf_bg_sk4"
+bg_sk6_dir = "./pdf_bg_sk6"
 bg_sk_dir = [bg_sk4_dir, bg_sk4_dir, bg_sk4_dir, bg_sk4_dir, bg_sk6_dir]
 
 # Signal Cherenkov angle fractions
 s_ch_frac = [9.433e-04, 9.925e-01, 6.525e-03]
+s_ch_frac_sk6 = [5.078e-03, 9.878e-01, 7.109e-03]
 s_ch_fracs = [s_ch_frac, s_ch_frac, s_ch_frac, s_ch_frac, s_ch_frac_sk6]
 
 # 3rd reduction efficiencies
+effs_sk6 = loadtxt("efficiencies/efficiencies_sk6.txt")
+effsk6 = interp1d(effs_sk6[:,0], effs_sk6[:,1], bounds_error=False,
+                  fill_value = (effs_sk6[0,1], effs_sk6[-1,1]))
 effs_sk4 = loadtxt("efficiencies/efficiencies_sk4.txt")
 effsk4 = interp1d(effs_sk4[:,0], effs_sk4[:,1], bounds_error=False,
                   fill_value = (effs_sk4[0,1], effs_sk4[-1,1]))
@@ -113,6 +73,9 @@ spaeff_sk2 = array([[17.5, 0.762], [20, 0.882], [26, 1.0]])
 spaeff_sk3 = array([[16, 0.818], [18, 0.908], [24, 1.0]])
 spaeff_sk4_nontag = array([[12, 0.8], [16, 0.65], [18, 0.63], [20, 0.918], [24, 0.98]])
 spaeff_sk4 = array([[16, 0.826], [18, 0.887], [20, 0.918], [24, 0.98]])
+spaeff_sk6 = array([[16, 0.73], [18, 0.78], [20, 0.86], [24, 0.98]])
+spaeff_sk6[:,1] = spaeff_sk6[:,1] * aft_eff_sk6[:,1] # Account for AFT efficiency here
+spaeff_sk6_nontag = spaeff_sk6
 spaeff = [spaeff_sk1, spaeff_sk2, spaeff_sk3, spaeff_sk4_nontag, spaeff_sk6_nontag]
 spaeff_ntag = [None, None, None, spaeff_sk4, spaeff_sk6]
 
@@ -124,6 +87,8 @@ soleff_sk3 = array([[16, 0.738], [17, 0.821], [18, 0.878],
                     [19, 0.965], [20, 1]])
 soleff_sk4 = array([[16, 0.731], [17, 0.822], [18, 0.883],
                     [19, 0.966], [20, 1]])
+soleff_sk6 = array([[16, 0.732], [17, 0.822], [18, 0.882],
+                    [19, 0.965], [20, 1]])
 soleff = [soleff_sk1, soleff_sk2, soleff_sk3, soleff_sk4, soleff_sk6]
 
 # SK4 ntag efficiencies
@@ -138,6 +103,19 @@ ntag_effs = ntag_eff(bdt_cuts) #[eff(c) for c in bdt_cuts]
 ntag_bgs = ntag_bg(bdt_cuts) # [bg(c) for c in bdt_cuts]
 ntag_eff_ps = 0.447 # N10 > 5, 18-523 microsecs window
 ntag_bg_ps = 7.05 # N10 > 5, 18-523 microsecs window
+
+# SK6 Ntag efficiencies
+ntag_ebins_sk6 = [12, 14, 16, 18, 20, 22, 24, 26, 28, 100]
+bdt_cuts_sk6 = [0.997, 0.997, 0.749, 0.749, 0.712, 0.712, 0.781, 0.855, 0.937]
+emin_sk6, emax_sk6 = ntag_ebins_sk6[0], ntag_ebins_sk6[-1]
+bdt_roc_sk6 = genfromtxt('/disk02/usr6/giampaol/ntag-mva/models/bdt22_skg4_0.013_10M/roc_test.roc')
+cuts_roc_sk6, roc_effs_sk6, roc_bg_sk6 = bdt_roc_sk6[:,0], bdt_roc_sk6[:,1], bdt_roc_sk6[:,2]
+ntag_eff_sk6 = interp1d(cuts_roc_sk6, roc_effs_sk6)
+ntag_bg_sk6 = interp1d(cuts_roc_sk6, roc_bg_sk6)
+ntag_effs_sk6 = ntag_eff_sk6(bdt_cuts_sk6)
+ntag_bgs_sk6 = ntag_bg_sk6(bdt_cuts_sk6)
+ntag_eff_ps_sk6 = 0.753 # N10 > 5, 1-535 microsecs window
+ntag_bg_ps_sk6 = 54 # N10 > 5, 1-535 microsecs window
 
 # ntag efficiencies of all SK periods
 ntag_ebins_sk = [None, None, None, ntag_ebins, ntag_ebins_sk6]
